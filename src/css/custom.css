@@ -6,54 +6,54 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  /* Brand Primary: Deep Tech-Indigo (High contrast for light mode) */
-  --ifm-color-primary: #4f46e5;
-  --ifm-color-primary-dark: #4338ca;
-  --ifm-color-primary-darker: #3730a3;
-  --ifm-color-primary-darkest: #1e1b4b;
-  --ifm-color-primary-light: #6366f1;
-  --ifm-color-primary-lighter: #818cf8;
-  --ifm-color-primary-lightest: #a5b4fc;
+  /* Brand Primary: Deep Tech-Indigo/Violet (Derived from the Logo's rich end, high contrast) */
+  --ifm-color-primary: #5c3bcf;
+  --ifm-color-primary-dark: #4d31ac;
+  --ifm-color-primary-darker: #3d288a;
+  --ifm-color-primary-darkest: #1e1b4b; /* Original deep anchor */
+  --ifm-color-primary-light: #8b6ff2;
+  --ifm-color-primary-lighter: #b3a1f8;
+  --ifm-color-primary-lightest: #dcd4fc;
   
   /* Borders & Highlights */
-  --ifm-color-border-gray: #e2e8f0;
+  --ifm-color-border-gray: #f1f5f9; /* Soft slate gray */
   --ifm-code-font-size: 90%;
-  --docusaurus-highlighted-code-line-bg: rgba(79, 70, 229, 0.1);
+  --docusaurus-highlighted-code-line-bg: rgba(92, 59, 207, 0.1); /* Updated primary indigo hint */
   
-  /* Hero Section: Rich tech-indigo gradient passing through the logo's cyan */
-  --ifm-hero-bg-start: #0f172a;    /* Sleek slate-900 background */
-  --ifm-hero-bg-mid: #312e81;      /* Deep indigo core */
-  --ifm-hero-bg-end: #1e1b4b;      /* Dark tech-indigo finish */
-  --ifm-hero-accent: #06b6d4;      /* Electric Cyan from transparent_logo.png as a focal highlight */
+  /* Hero Section: Rich tech-indigo-to-cyan gradient on a sleek obsidian base */
+  --ifm-hero-bg-start: #0f172a;    /* Sleek slate-900 obsidian background */
+  --ifm-hero-bg-mid: #1d2757;      /* Intense deep indigo core from logo */
+  --ifm-hero-bg-end: #121831;      /* Deep interstellar black-indigo anchor */
+  --ifm-hero-accent: #0ecfe0;      /* Electric Cyan from transparent_logo.png as a focal highlight */
   --ifm-hero-title-text: #ffffff;
   --ifm-hero-subtext: #cbd5e1;     /* Soft slate white */
-  --ifm-hero-border: rgba(99, 102, 241, 0.2);
+  --ifm-hero-border: rgba(14, 207, 224, 0.15); /* Subtle cyan-glow hint */
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  /* Brand Primary: Vibrant, glowing tech-indigo for flawless dark mode contrast */
-  --ifm-color-primary: #818cf8;
-  --ifm-color-primary-dark: #6366f1;
-  --ifm-color-primary-darker: #4f46e5;
-  --ifm-color-primary-darkest: #3730a3;
-  --ifm-color-primary-light: #93c5fd;
-  --ifm-color-primary-lighter: #a5b4fc;
-  --ifm-color-primary-lightest: #c7d2fe;
+  /* Brand Primary: Flawless glowing tech-cyan for "safe flow" contrast */
+  --ifm-color-primary: #0ecfe0;
+  --ifm-color-primary-dark: #09b8c9;
+  --ifm-color-primary-darker: #079fae;
+  --ifm-color-primary-darkest: #046e78;
+  --ifm-color-primary-light: #44e1ee;
+  --ifm-color-primary-lighter: #80ecf3;
+  --ifm-color-primary-lightest: #bff6f9;
   
   /* Dark Mode Borders & Highlights */
-  --ifm-color-border-gray: #1e293b;
+  --ifm-color-border-gray: #111827; /* Deep slate-950 obsidian background */
   --ifm-code-font-size: 90%;
-  --docusaurus-highlighted-code-line-bg: rgba(129, 140, 248, 0.15);
+  --docusaurus-highlighted-code-line-bg: rgba(14, 207, 224, 0.15); /* Updated primary cyan hint */
   
-  /* Cyber Dark Hero Canvas */
-  --ifm-hero-bg-start: #030712;   /* Deep interstellar black */
-  --ifm-hero-bg-mid: #0a0f24;     /* Dark indigo tint */
-  --ifm-hero-bg-end: #020617;     /* Sleek obsidian */
-  --ifm-hero-accent: #22d3ee;     /* Neon cyan from transparent_logo.png that cuts through the dark */
+  /* Cyber Dark Hero Canvas (Intense & Interstellar) */
+  --ifm-hero-bg-start: #020617;   /* Sleek obsidian slate-950 background */
+  --ifm-hero-bg-mid: #01030b;     /* Deep interstellar black */
+  --ifm-hero-bg-end: #03081a;     /* Return to a deep indigo slate-950 */
+  --ifm-hero-accent: #21f0fd;      /* Neon cyan from transparent_logo.png that cuts through the dark */
   --ifm-hero-title-text: #f8fafc;
   --ifm-hero-subtext: #94a3b8;     /* Tech muted gray */
-  --ifm-hero-border: rgba(34, 211, 238, 0.15);
+  --ifm-hero-border: rgba(33, 240, 253, 0.2); /* Integrated neon-cyan glow */
 }
 
 /* Firefox */
