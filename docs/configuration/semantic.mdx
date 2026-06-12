@@ -1,0 +1,130 @@
+---
+id: semantic
+title: Semantic Configuration
+sidebar_label: Semantic
+sidebar_position: 5
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Semantic Configuration
+
+The `Semantic` section configures the optional LLM/ONNX-powered intent analysis layer. When enabled, Synentra classifies the free-form content of proxied requests to detect malicious or out-of-scope intent.
+
+---
+
+## Properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool?` | `false` | Enable / disable semantic analysis |
+| `ConfidenceThreshold` | `double?` | `0.7` | Minimum confidence score (0–1) required to act on a semantic verdict |
+| `AllowLowConfidence` | `bool?` | `false` | Whether to allow requests when confidence is below the threshold |
+| `DefaultProvider` | `string` | `"Internal"` | Active provider: `Internal`, `OpenAi`, `AzureAi`, `Gemini`, or `Ollama` |
+
+---
+
+## Providers
+
+### Internal (ONNX / BERT)
+
+Uses a bundled ONNX BERT model — no external API calls required.
+
+```json
+"Semantic": {
+  "Enabled": true,
+  "DefaultProvider": "Internal"
+}
+```
+
+### OpenAI
+
+| Property | Description |
+|---|---|
+| `ApiKey` | OpenAI API key |
+| `Model` | Model identifier (e.g., `gpt-4o`) |
+
+```json
+"Semantic": {
+  "Enabled": true,
+  "DefaultProvider": "OpenAi",
+  "Providers": {
+    "OpenAi": {
+      "ApiKey": "sk-...",
+      "Model": "gpt-4o"
+    }
+  }
+}
+```
+
+### Azure AI
+
+| Property | Description |
+|---|---|
+| `Endpoint` | Azure AI endpoint URL |
+| `ApiKey` | Azure AI API key |
+| `DeploymentName` | Deployment / model name |
+
+```json
+"Semantic": {
+  "Enabled": true,
+  "DefaultProvider": "AzureAi",
+  "Providers": {
+    "AzureAi": {
+      "Endpoint": "https://your-resource.openai.azure.com/",
+      "ApiKey": "...",
+      "DeploymentName": "gpt-4o"
+    }
+  }
+}
+```
+
+### Google Gemini
+
+| Property | Description |
+|---|---|
+| `ApiKey` | Gemini API key |
+| `Model` | Model identifier |
+
+```json
+"Semantic": {
+  "Enabled": true,
+  "DefaultProvider": "Gemini",
+  "Providers": {
+    "Gemini": {
+      "ApiKey": "...",
+      "Model": "gemini-pro"
+    }
+  }
+}
+```
+
+### Ollama (Local LLM)
+
+| Property | Description |
+|---|---|
+| `BaseUrl` | Ollama server URL |
+| `Model` | Model identifier (e.g., `llama3`) |
+
+```json
+"Semantic": {
+  "Enabled": true,
+  "DefaultProvider": "Ollama",
+  "Providers": {
+    "Ollama": {
+      "BaseUrl": "http://localhost:11434",
+      "Model": "llama3"
+    }
+  }
+}
+```
+
+---
+
+## How Semantic Evaluation Works
+
+1. The provider converts the request body to an intent text string.
+2. The text is embedded and classified using the selected model.
+3. If the returned confidence is **≥ `ConfidenceThreshold`** and the verdict is negative (malicious/out-of-scope), the request is denied or escalated to HITL.
+4. If confidence is **< `ConfidenceThreshold`** and `AllowLowConfidence` is `false`, the request is denied.

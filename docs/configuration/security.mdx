@@ -1,0 +1,117 @@
+---
+id: security
+title: Security Configuration
+sidebar_label: Security
+sidebar_position: 3
+---
+
+# Security Configuration
+
+The `Security` section configures how AI agents authenticate with the Synentra gateway.
+
+---
+
+## Agent Authentication
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Provider` | `AgentAuthProviderType` | `SelfSigned` | Authentication provider: `SelfSigned` or `Jwt` |
+| `SelfSigned` | `SelfSignedProvider` | `{}` | Self-signed JWT configuration |
+| `Jwt` | `JwtProvider` | — | External JWT configuration |
+
+### `SelfSigned` Provider
+
+Synentra generates its own signing key and issues tokens internally. This is the simplest setup and suitable for development or closed deployments.
+
+```json
+"Security": {
+  "AgentAuth": {
+    "Provider": "SelfSigned"
+  }
+}
+```
+
+### `Jwt` Provider
+
+Tokens are validated against an external JWT authority (e.g., your own identity provider).
+
+| Property | Type | Description |
+|---|---|---|
+| `Issuer` | `string` | Expected token issuer |
+| `Audience` | `string` | Expected token audience |
+| `SecretKey` | `string` | HMAC signing key (for symmetric tokens) |
+
+```json
+"Security": {
+  "AgentAuth": {
+    "Provider": "Jwt",
+    "Jwt": {
+      "Issuer": "https://auth.example.com",
+      "Audience": "synentra-gateway",
+      "SecretKey": "your-secret-key"
+    }
+  }
+}
+```
+
+---
+
+## Authentication Flow
+
+1. An agent calls `POST /tokens` with its `agentId` and `clientSecret`.
+2. Synentra validates the `clientSecret` using **bcrypt** (via `BcryptSecretHasher`).
+3. On success, a **JWT** is issued containing:
+   - `sub` — the agent's `Guid` ID
+   - `trust_score` — the agent's current trust score (0.0–1.0)
+   - `exp` — expiry
+4. The agent includes the JWT in subsequent requests as `Authorization: Bearer <token>`.
+5. `Middleware` validates the token on every request.
+
+---
+
+## Agent Quarantine
+
+Agent Quarantine automatically blocks an agent’s requests when its `TrustScore` falls below a configurable floor.
+
+When quarantine is enabled:
+
+- If an agent’s `TrustScore` is **below** `TrustScoreFloor`, Synentra will **persist** the agent as `Quarantined`.
+- A quarantined agent receives **HTTP 403** responses (requests are blocked at the gateway).
+- Quarantine stays in effect until an operator explicitly lifts it.
+
+### Configuration
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool?` | `true` | Enables/disables automatic quarantine checks. If omitted (`null`), it behaves as enabled. Set to `false` to disable. |
+| `TrustScoreFloor` | `double` | `0.3` | If an agent’s trust score is below this value, it is automatically quarantined. |
+
+### Example: Default behavior (enabled)
+
+```json
+"Security": {
+  "AgentAuth": {
+    "Provider": "SelfSigned"
+  },
+  "AgentQuarantine": { 
+    "Enabled": true, 
+    "TrustScoreFloor": 0.3 
+  } 
+}
+```
+
+### Example: Disable quarantine
+
+```json
+"Security": { 
+  "AgentQuarantine": { 
+    "Enabled": false 
+  } 
+}
+```
+
+---
+
+## Secret Management Integration
+
+For production, avoid placing secrets in `appsettings.json`. Use the [Secret Management](./secret-management) integration to load keys from environment variables or Azure Key Vault.

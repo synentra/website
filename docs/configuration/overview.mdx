@@ -1,0 +1,175 @@
+---
+id: overview
+title: Configuration Overview
+sidebar_label: Overview
+sidebar_position: 1
+---
+
+# Configuration Overview
+
+Synentra uses the standard **ASP.NET Core configuration system** (`appsettings.json`, environment variables, user secrets, Azure Key Vault).
+
+---
+
+## Top-Level Sections
+
+| JSON Key | Description |
+|---|---|
+| `System` | Server, storage, rate limiting, circuit breaker |
+| `Security` | Agent security provider and quarantine mechanism |
+| `Policy` | Policy engine provider selection |
+| `Semantic` | Semantic/LLM provider selection |
+| `HumanInTheLoop` | HITL thresholds and timeouts |
+| `Observability` | Logging sinks |
+| `SecretManagement` | External secret provider |
+
+---
+
+## Full Schema Example
+
+```json
+{
+  "System": {
+    "Server": {
+      "Http": { "Port": 7080 },
+      "Https": {
+        "Enabled": false,
+        "Port": 7443,
+        "Certificate": {
+          "Path": "/certs/synentra.pfx",
+          "Password": ""
+        }
+      },
+      "MaxConcurrentConnections": 1000,
+      "MaxConcurrentUpgradedConnections": 100,
+      "KeepAliveTimeout": "00:02:00",
+      "RequestHeadersTimeout": "00:00:30",
+      "MaxRequestBodySizeMb": 50
+    },
+    "Storage": {
+      "Database": {
+        "DefaultProvider": "Sqlite",
+        "Providers": {
+          "Sqlite": { "ConnectionString": "Data Source=synentra.db" },
+          "Postgres": { "ConnectionString": "" }
+        }
+      },
+      "Cache": {
+        "DefaultProvider": "Memory",
+        "Providers": {
+          "Redis": { "ConnectionString": "" },
+          "Memory": {}
+        }
+      }
+    },
+    "RateLimit": {
+      "Enabled": true,
+      "DefaultRequestsPerMinute": 60
+    },
+    "CircuitBreaker": {
+      "Enabled": true,
+      "FailureThreshold": 5,
+      "OpenDurationSeconds": 30,
+      "SamplingWindowSeconds": 60
+    }
+  },
+  "Security": {
+    "AgentAuth": {
+      "Provider": "SelfSigned",
+      "SelfSigned": {},
+      "Jwt": {
+        "Issuer": "",
+        "Audience": "",
+        "SecretKey": ""
+      }
+    },
+    "AgentQuarantine": {
+      "Enabled": true,
+      "TrustScoreFloor": 0.3
+    }
+  },
+  "Policy": {
+    "Enabled": true,
+    "DefaultProvider": "Internal",
+    "Providers": {
+      "Internal": { "Directory": "./policies" },
+      "Opa": {
+        "BaseUrl": "http://localhost:8181",
+        "Path": "/v1/data/synentra/authz",
+        "Timeout": "00:00:05"
+      }
+    }
+  },
+  "Semantic": {
+    "Enabled": false,
+    "ConfidenceThreshold": 0.7,
+    "AllowLowConfidence": false,
+    "DefaultProvider": "Internal",
+    "Providers": {
+      "Internal": {},
+      "OpenAi": { "ApiKey": "", "Model": "gpt-4o" },
+      "AzureAi": { "Endpoint": "", "ApiKey": "", "DeploymentName": "" },
+      "Gemini": { "ApiKey": "", "Model": "" },
+      "Ollama": { "BaseUrl": "http://localhost:11434", "Model": "llama3" }
+    }
+  },
+  "HumanInTheLoop": {
+    "Enabled": true,
+    "Threshold": 0.8,
+    "TimeoutSeconds": 3600,
+    "MaxPendingRequests": 100,
+    "Notifications": {
+      "Slack": {
+        "Enabled": false,
+        "WebhookUrl": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+        "Channel": "#security-reviews",
+        "Username": "Synentra HITL Bot",
+        "IconEmoji": ":shield:"
+      },
+      "Teams": {
+        "Enabled": false,
+        "WebhookUrl": "https://outlook.office.com/webhook/YOUR-WEBHOOK-URL",
+        "ThemeColor": "FF0000"
+      },
+      "PagerDuty": {
+        "Enabled": false,
+        "RoutingKey": "your-integration-key-here",
+        "Severity": "warning"
+      }
+    }
+  },
+  "Observability": {
+    "Logging": {
+      "DefaultLogLevel": "Information",
+      "File": {
+        "Enabled": true,
+        "Path": "./logs/synentra-.log"
+      },
+      "Seq": {
+        "Enabled": false,
+        "ServerUrl": "http://localhost:5341",
+        "ApiKey": ""
+      }
+    }
+  },
+  "SecretManagement": {
+    "DefaultProvider": "None",
+    "Providers": {
+      "EnvironmentVariables": {},
+      "AzureKeyVault": { "VaultUri": "" }
+    }
+  }
+}
+```
+
+---
+
+## Section Pages
+
+- [System Configuration](./system)
+- [Security Configuration](./security)
+- [Policy Configuration](./policy)
+- [Semantic Configuration](./semantic)
+- [Human-in-the-Loop Configuration](./hitl)
+- [Observability Configuration](./observability)
+- [Secret Management Configuration](./secret-management)

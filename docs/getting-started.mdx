@@ -1,0 +1,145 @@
+---
+id: getting-started
+title: Getting Started
+sidebar_label: Getting Started
+sidebar_position: 2
+---
+
+# Getting Started
+
+This guide walks you through installing, configuring, and running Synentra for the first time.
+
+---
+
+## Prerequisites
+
+| Requirement | Version |
+|---|---|
+| [.NET SDK](https://dotnet.microsoft.com/download/dotnet/10.0) | 10.0 or later |
+| A supported database | SQLite (default) or PostgreSQL |
+| A supported cache | In-Memory (default) or Redis |
+
+---
+
+## Installation
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/synentra/synentra.git
+cd synentra
+```
+
+### Restore & Build
+
+```bash
+dotnet restore
+dotnet build
+```
+
+---
+
+## Running Synentra
+
+Synentra is driven by a CLI entry-point. The simplest way to start the gateway is:
+
+```bash
+dotnet run --project src/Synentra
+```
+
+To check the current version:
+
+```bash
+dotnet run --project src/Synentra -- --version
+```
+
+---
+
+## Minimal Configuration
+
+Synentra is configured through standard ASP.NET Core `appsettings.json` / environment variables. A minimal working configuration looks like:
+
+```json title="appsettings.json"
+{
+  "System": {
+    "Server": {
+      "Http": { "Port": 7080 }
+    },
+    "Storage": {
+      "Database": {
+        "DefaultProvider": "Sqlite",
+        "Providers": {
+          "Sqlite": { "ConnectionString": "Data Source=synentra.db" }
+        }
+      },
+      "Cache": {
+        "DefaultProvider": "Memory"
+      }
+    }
+  },
+  "Security": {
+    "AgentAuth": {
+      "Provider": "SelfSigned"
+    }
+  },
+  "Policy": {
+    "Enabled": true,
+    "DefaultProvider": "Internal",
+    "Providers": {
+      "Internal": { "Directory": "./policies" }
+    }
+  },
+  "HumanInTheLoop": {
+    "Enabled": true,
+    "Threshold": 0.8,
+    "TimeoutSeconds": 3600,
+    "MaxPendingRequests": 100
+  }
+}
+```
+
+---
+
+## Running via Docker
+
+Pre-built images are published to the GitHub Container Registry (GHCR). The `latest` tag is a multi-arch manifest — Docker automatically selects the correct variant for your host.
+
+```bash
+docker run -d \
+  --name synentra \
+  -p 7080:7080 \
+  -e System__Storage__Database__Providers__Sqlite__ConnectionString="Data Source=/data/synentra.db" \
+  -e Policy__Providers__Internal__Directory="/policies" \
+  -v $(pwd)/data:/data \
+  -v $(pwd)/policies:/policies \
+  ghcr.io/synentra/synentra:latest
+```
+
+Once running, Synentra is available at `http://localhost:7080`. The `/health` endpoint confirms it is up:
+
+```bash
+curl http://localhost:7080/health
+# {"status":"Healthy","healthCheckDuration":"00:00:00.0023456"}
+```
+
+For the full Docker reference — HTTPS, Docker Compose with Redis and Seq, volume mounts, and environment variable mappings — see the [Docker](./docker) guide.
+
+---
+
+## First Request Flow
+
+1. **Register an agent** — `POST /agents`
+2. **Obtain a JWT token** — `POST /tokens`
+3. **Proxy a request** — `GET /proxy/https://api.example.com/data` with `Authorization: Bearer <token>`
+
+Synentra will authenticate the agent, evaluate its policy, compute a risk score, and either forward the request or intercept it for human review.
+
+---
+
+## Next Steps
+
+- [Configuration Reference](./configuration/overview) — Full configuration schema
+- [Agents](./agents) — Registering and managing agents
+- [Policies](./policies/overview) — Writing policy files
+- [Human-in-the-Loop](./hitl) — Reviewing intercepted requests
+- [API Reference](./api-reference) — Full REST API documentation

@@ -1,0 +1,171 @@
+---
+id: hitl
+title: Human-in-the-Loop
+sidebar_label: Human-in-the-Loop
+sidebar_position: 11
+---
+
+# Human-in-the-Loop (HITL)
+
+The Human-in-the-Loop system allows Synentra to **intercept high-risk requests** and hold them pending manual operator review before execution. This is Synentra's primary mechanism for keeping humans in control of autonomous agent behaviour.
+
+---
+
+## How Interception Works
+
+1. The `DecisionEngine` returns `Hitl(reason)` when:
+   - A **policy rule** with `Effect: Hitl` matches, or
+   - The **risk score** exceeds `HumanInTheLoop.Threshold`
+2. `HitlService` Suspend Request and stores the full request in the cache with a TTL of `TimeoutSeconds`.
+3. The agent receives:
+   ```
+   HTTP/1.1 202 Accepted
+   Location: /hitl/{id}
+   ```
+4. An operator reviews the request via the HITL API.
+5. On **approval**, the original request is replayed against the upstream.
+6. On **denial**, the request is discarded.
+
+---
+
+## HITL Request State Machine
+
+```
+PENDING → APPROVED → (upstream response forwarded)
+        → DENIED
+        → EXPIRED (TTL elapsed)
+```
+
+---
+
+## API Endpoints
+
+Base path: `/hitl`
+
+### List All Pending Requests
+
+```http
+GET /hitl
+```
+
+**Response** `200 OK`
+
+```json
+[
+  {
+    "id": "abc-123",
+    "method": "DELETE",
+    "url": "https://api.example.com/users/all",
+    "reason": "High risk score: 0.92",
+    "agentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "timestamp": "2025-01-01T12:00:00Z",
+    "expiresAt": "2025-01-01T13:00:00Z"
+  }
+]
+```
+
+---
+
+### Get Request Status
+
+```http
+GET /hitl/{id}
+```
+
+**Response** `200 OK`
+
+```json
+{
+  "id": "abc-123",
+  "status": "Pending",
+  "pending": {
+    "id": "abc-123",
+    "method": "DELETE",
+    "url": "https://api.example.com/users/all",
+    "headers": { "Content-Type": "application/json" },
+    "body": "{\"confirm\": true}",
+    "reason": "Policy rule: require-hitl-for-bulk-delete",
+    "agentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "timestamp": "2025-01-01T12:00:00Z",
+    "expiresAt": "2025-01-01T13:00:00Z"
+  }
+}
+```
+
+**Possible `status` values:** `Pending`, `Approved`, `Denied`, `Expired`
+
+**Response** `404 Not Found` — if the ID does not exist.
+
+---
+
+### Approve a Request
+
+```http
+POST /hitl/{id}/approve
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "comment": "Verified with team lead — proceed"
+}
+```
+
+**Response** `200 OK`
+
+On approval, Synentra immediately **replays** the original request to the upstream and returns the upstream's response body and status code to the caller.
+
+**Response** `404 Not Found` — if expired or not found.
+
+**Response** `502 Bad Gateway` — if the upstream failed during replay.
+
+---
+
+### Deny a Request
+
+```http
+POST /hitl/{id}/deny
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "comment": "Bulk delete not authorised for this agent"
+}
+```
+
+**Response** `200 OK`
+
+The request is permanently discarded. An audit trail entry is created.
+
+---
+
+## Security Considerations
+
+- **Sensitive headers** (`Authorization`, `Cookie`, `X-Api-Key`, `X-Auth-Token`, etc.) are **redacted** before being stored in the HITL cache. The original `Authorization` header (Synentra JWT) is never stored.
+- Pending requests expire automatically after `TimeoutSeconds` to prevent stale approvals.
+- `MaxPendingRequests` limits the number of concurrent HITL items to prevent cache flooding.
+
+---
+
+## Webhook Notifications
+
+Configure `HumanInTheLoop.NotificationWebhookUrl` to receive a `POST` notification whenever a new request is suspended:
+
+```json
+{
+  "id": "abc-123",
+  "agentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "method": "DELETE",
+  "url": "https://api.example.com/users/all",
+  "reason": "High risk score: 0.92",
+  "timestamp": "2025-01-01T12:00:00Z",
+  "expiresAt": "2025-01-01T13:00:00Z"
+}
+```
+
+See [HITL Configuration](./configuration/hitl) for setup details.

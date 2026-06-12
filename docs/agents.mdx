@@ -1,0 +1,150 @@
+---
+id: agents
+title: Agents
+sidebar_label: Agents
+sidebar_position: 6
+---
+
+# Agents
+
+An **Agent** is the core identity unit in Synentra. Every autonomous AI agent, service, or system that proxies requests through Synentra must be registered as an agent. Each agent has a unique identity, a trust score, an assigned policy, and a lifecycle status.
+
+---
+
+## Domain Model
+
+| Property | Type | Description |
+|---|---|---|
+| `Id` | `Guid` | Unique identifier (auto-generated) |
+| `Name` | `string` | Human-readable agent name |
+| `OwnerId` | `string?` | Identifier of the agent owner/team |
+| `Status` | `AgentStatus` | `Active` or `Revoked` |
+| `PolicyName` | `string?` | Name of the assigned policy |
+| `ClientSecretHash` | `string` | Bcrypt hash of the agent's client secret |
+| `TrustScore` | `double` | Current trust score (0.0 – 1.0). Default: `0.5` |
+| `AgentHistories` | `ICollection<AgentHistory>` | Time-series history of recent requests |
+
+### AgentStatus
+
+| Value | Description |
+|---|---|
+| `Active` | Agent can proxy requests |
+| `Revoked` | Agent is blocked. All requests return `403 Forbidden` |
+
+---
+
+## API Endpoints
+
+Base path: `/agents`
+
+### List Agents
+
+```http
+GET /agents?page=1&pageSize=25
+```
+
+Returns a paginated list of all registered agents.
+
+**Response** `200 OK`
+
+```json
+{
+  "items": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "name": "billing-agent",
+      "ownerId": "team-finance",
+      "status": "Active",
+      "policyName": "billing-policy",
+      "trustScore": 0.75
+    }
+  ],
+  "page": 1,
+  "pageSize": 25,
+  "totalCount": 1
+}
+```
+
+---
+
+### Register Agent
+
+```http
+POST /agents
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "name": "billing-agent",
+  "ownerId": "team-finance",
+  "clientSecret": "my-strong-secret"
+}
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `name` | ✅ | Human-readable name |
+| `ownerId` | ✅ | Owner identifier |
+| `clientSecret` | ✅ | Secret used to obtain JWT tokens |
+
+**Response** `201 Created`
+
+```json
+{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "name": "billing-agent",
+  "clientSecret": "my-strong-secret"
+}
+```
+
+:::warning
+The `clientSecret` is only returned once. Store it securely — Synentra only stores the bcrypt hash.
+:::
+
+---
+
+### Assign Policy
+
+```http
+PUT /agents/{agentId}/policy
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "policyName": "billing-policy"
+}
+```
+
+**Response** `200 OK`
+
+Associates the named policy with the agent. On every proxied request, Synentra will evaluate this policy.
+
+---
+
+### Delete Agent
+
+```http
+DELETE /agents/{agentId}
+```
+
+**Response** `200 OK`
+
+Removes the agent. Any active JWT tokens for this agent will be rejected as agent lookup will fail.
+
+---
+
+## Trust Score
+
+Every agent starts with a trust score of `0.5`. The score is adjusted dynamically by the `DecisionEngine` based on request history and risk. The score directly influences policy decisions and HITL thresholds.
+
+| Score Range | Interpretation |
+|---|---|
+| 0.0 – 0.3 | High risk — likely to trigger HITL |
+| 0.3 – 0.7 | Neutral |
+| 0.7 – 1.0 | Trusted — lower likelihood of interception |

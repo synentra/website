@@ -1,0 +1,83 @@
+---
+id: observability
+title: Observability Configuration
+sidebar_label: Observability
+sidebar_position: 7
+---
+
+# Observability Configuration
+
+The `Observability` section configures structured logging sinks for Synentra.
+
+---
+
+## Logging
+
+**Class:** `LoggingConfiguration`
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `DefaultLogLevel` | `string` | `"Information"` | Minimum log level: `Verbose`, `Debug`, `Information`, `Warning`, `Error`, `Fatal` |
+| `File` | `FileLoggingConfiguration` | — | Rolling file sink |
+| `Seq` | `SeqLoggingConfiguration` | — | [Seq](https://datalust.co/seq) structured log server |
+
+---
+
+## File Sink
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `true` | Enable file logging |
+| `Path` | `string` | `./logs/synentra-.log` | Log file path (supports Serilog rolling tokens like `-{Date}`) |
+
+```json
+"Observability": {
+  "Logging": {
+    "DefaultLogLevel": "Information",
+    "File": {
+      "Enabled": true,
+      "Path": "./logs/synentra-.log"
+    }
+  }
+}
+```
+
+---
+
+## Seq Sink
+
+[Seq](https://datalust.co/seq) provides a searchable, real-time structured log server.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `false` | Enable Seq logging |
+| `ServerUrl` | `string` | `http://localhost:5341` | Seq server URL |
+| `ApiKey` | `string` | — | Seq API key (if authentication is enabled) |
+
+```json
+"Observability": {
+  "Logging": {
+    "Seq": {
+      "Enabled": true,
+      "ServerUrl": "http://seq:5341",
+      "ApiKey": "your-seq-api-key"
+    }
+  }
+}
+```
+
+---
+
+## Structured Log Events
+
+Synentra emits structured log events at key points in the pipeline:
+
+| Event | Level | Description |
+|---|---|---|
+| Agent authenticated | `Debug` | Successful JWT validation |
+| Rate limit exceeded | `Warning` | Agent exceeded requests/min |
+| Circuit breaker open | `Warning` | Upstream is temporarily unavailable |
+| Policy denied | `Information` | Request blocked by policy |
+| HITL suspended | `Information` | Request held for human review |
+| Risk score computed | `Debug` | Per-request risk score |
+| Startup failure | `Critical` | Unhandled exception during startup |

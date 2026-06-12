@@ -1,0 +1,128 @@
+---
+id: system
+title: System Configuration
+sidebar_label: System
+sidebar_position: 2
+---
+
+# System Configuration
+
+The `System` section controls the HTTP server (Kestrel), storage backends, rate limiting, and circuit breaker behaviour.
+
+---
+
+## Server
+
+Controls the Kestrel web server.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Http.Port` | `int` | `7080` | HTTP listener port |
+| `Https.Enabled` | `bool` | `false` | Enable HTTPS |
+| `Https.Port` | `int` | `7443` | HTTPS listener port |
+| `Https.Certificate.Path` | `string` | — | Path to PFX/PEM certificate file |
+| `Https.Certificate.Password` | `string` | — | Certificate password (omit for passwordless) |
+| `MaxConcurrentConnections` | `long?` | `null` | Kestrel max concurrent connections (`null` = unlimited) |
+| `MaxConcurrentUpgradedConnections` | `long?` | `null` | Max WebSocket / HTTP/2 upgrade connections |
+| `KeepAliveTimeout` | `TimeSpan?` | `00:02:00` | Connection keep-alive timeout |
+| `RequestHeadersTimeout` | `TimeSpan?` | `00:00:30` | Time allowed to receive request headers |
+| `MaxRequestBodySizeMb` | `int?` | `50` | Maximum request body size in megabytes |
+
+### HTTPS Example
+
+```json
+"Server": {
+  "Http": { "Port": 7080 },
+  "Https": {
+    "Enabled": true,
+    "Port": 7443,
+    "Certificate": {
+      "Path": "/certs/synentra.pfx",
+      "Password": "s3cr3t"
+    }
+  }
+}
+```
+
+:::note
+HTTP and HTTPS ports **must** be different. Synentra will throw an `InvalidOperationException` at startup if they match.
+:::
+
+---
+
+## Storage
+
+### Database
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `DefaultProvider` | `string` | `"Sqlite"` | Active database provider: `"Sqlite"` or `"Postgres"` |
+| `Providers.Sqlite.ConnectionString` | `string` | — | SQLite connection string |
+| `Providers.Postgres.ConnectionString` | `string` | — | PostgreSQL connection string |
+
+```json
+"Database": {
+  "DefaultProvider": "Sqlite",
+  "Providers": {
+    "Sqlite": { "ConnectionString": "Data Source=synentra.db" }
+  }
+}
+```
+
+### Cache
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `DefaultProvider` | `string` | `"Redis"` | Active cache provider: `"Redis"` or `"Memory"` |
+| `Providers.Redis.ConnectionString` | `string` | — | Redis connection string (e.g., `localhost:6379`) |
+| `Providers.Memory` | `object` | `{}` | In-memory cache (no additional properties) |
+
+```json
+"Cache": {
+  "DefaultProvider": "Memory"
+}
+```
+
+---
+
+## Rate Limiting
+
+Per-agent token-bucket rate limiter.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `true` | Enable / disable rate limiting globally |
+| `DefaultRequestsPerMinute` | `int` | `60` | Maximum requests per minute per agent |
+
+Agents that exceed the limit receive a `429 Too Many Requests` response with a `Retry-After: 60` header.
+
+```json
+"RateLimit": {
+  "Enabled": true,
+  "DefaultRequestsPerMinute": 120
+}
+```
+
+---
+
+## Circuit Breaker
+
+Protects upstream services from repeated failures.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `true` | Enable / disable the circuit breaker |
+| `FailureThreshold` | `int` | `5` | Number of failures before the circuit opens |
+| `OpenDurationSeconds` | `int` | `30` | Duration (seconds) the circuit stays open |
+| `SamplingWindowSeconds` | `int` | `60` | Rolling window for counting failures |
+
+When the circuit is open, requests receive a `503 Service Unavailable` response.
+
+```json
+"CircuitBreaker": {
+  "Enabled": true,
+  "FailureThreshold": 3,
+  "OpenDurationSeconds": 60,
+  "SamplingWindowSeconds": 120
+}
+```

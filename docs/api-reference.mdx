@@ -1,0 +1,779 @@
+---
+id: api-reference
+title: API Reference
+sidebar_label: API Reference
+sidebar_position: 12
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# API Reference
+
+Synentra exposes a REST API via ASP.NET Core Minimal APIs.  
+Interactive API documentation is also available at `/open-api` when the server is running.
+
+:::tip Base URL
+Throughout this guide the base URL is assumed to be your running server, e.g. `http://localhost:7080`.
+Replace `${BASE_URL}` in the examples with your actual server address.
+:::
+
+---
+
+## Authentication
+
+All requests to management endpoints must include a valid agent JWT (see [Tokens](#tokens)).
+
+<details>
+<summary>Set the authorization header</summary>
+
+```http
+Authorization: Bearer <token>
+```
+
+</details>
+
+---
+
+## Tokens
+
+### `POST /tokens` — Exchange credentials for JWT
+
+Exchange an agent's ID and client secret for a JWT token.
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X POST "${BASE_URL}/tokens" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "clientSecret": "my-strong-secret"
+  }'
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/tokens`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    agentId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    clientSecret: 'my-strong-secret'
+  })
+})
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.post(
+    f'{BASE_URL}/tokens',
+    json={
+        'agentId': '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+        'clientSecret': 'my-strong-secret'
+    }
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+**Responses** 
+
+- `200 OK` — Successful authentication.
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresAt": "2025-01-01T13:00:00Z"
+}
+```
+
+- `401 Unauthorized` — Invalid credentials.
+
+---
+
+## Agents
+
+Base path: `/agents`
+
+### `GET /agents` — List agents
+
+| Query Param | Type | Default | Description |
+|---|---|---|---|
+| `page` | `int` | `1` | Page number |
+| `pageSize` | `int` | `25` | Items per page |
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl "${BASE_URL}/agents?page=1&pageSize=25"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/agents?page=1&pageSize=25`)
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.get(
+    f'{BASE_URL}/agents',
+    params={'page': 1, 'pageSize': 25}
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+```json
+{
+  "items": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "name": "billing-agent",
+      "ownerId": "team-finance",
+      "status": "Active",
+      "policyName": "billing-policy",
+      "trustScore": 0.75
+    }
+  ],
+  "page": 1,
+  "pageSize": 25,
+  "totalCount": 1
+}
+```
+
+---
+
+### `POST /agents` — Register agent
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X POST "${BASE_URL}/agents" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "billing-agent",
+    "ownerId": "team-finance",
+    "clientSecret": "my-strong-secret"
+  }'
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/agents`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'billing-agent',
+    ownerId: 'team-finance',
+    clientSecret: 'my-strong-secret'
+  })
+})
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.post(
+    f'{BASE_URL}/agents',
+    json={
+        'name': 'billing-agent',
+        'ownerId': 'team-finance',
+        'clientSecret': 'my-strong-secret'
+    }
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+
+**Request**
+
+```json
+{
+  "name": "billing-agent",
+  "ownerId": "team-finance",
+  "clientSecret": "my-strong-secret"
+}
+```
+
+**Response** `201 Created`
+
+```json
+{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "name": "billing-agent",
+  "clientSecret": "my-strong-secret"
+}
+```
+
+---
+
+### `PUT /agents/{agentId}/policy` — Assign policy
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X PUT "${BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/policy" \
+  -H "Content-Type: application/json" \
+  -d '{ "policyName": "billing-policy" }'
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/policy`, {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ policyName: 'billing-policy' })
+})
+.then(res => {
+  if (res.ok) console.log('Policy assigned');
+});
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.put(
+    f'{BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/policy',
+    json={'policyName': 'billing-policy'}
+)
+print(response.status_code)
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+---
+
+### `DELETE /agents/{agentId}` — Delete agent
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X DELETE "${BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6`, {
+  method: 'DELETE'
+})
+.then(res => {
+  if (res.ok) console.log('Agent deleted');
+});
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.delete(
+    f'{BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6'
+)
+print(response.status_code)
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+---
+
+### `POST /agents/{agentId}/lift-quarantine` — Lift quarantine
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X POST "${BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/lift-quarantine"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/lift-quarantine`, {
+  method: 'POST'
+})
+.then(res => {
+  if (res.ok) console.log('Quarantine lifted');
+});
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.post(
+    f'{BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/lift-quarantine'
+)
+print(response.status_code)
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+---
+
+## Policies
+
+Base path: `/policies`
+
+### `GET /policies` — List policies
+
+| Query Param | Type | Default |
+|---|---|---|
+| `page` | `int` | `1` |
+| `pageSize` | `int` | `25` |
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl "${BASE_URL}/policies?page=1&pageSize=25"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/policies?page=1&pageSize=25`)
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.get(
+    f'{BASE_URL}/policies',
+    params={'page': 1, 'pageSize': 25}
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+```json
+{
+  "items": [
+    {
+      "name": "billing-policy",
+      "description": "Governs the billing agent",
+      "owner": "team-finance",
+      "default": "Deny",
+      "ruleCount": 3
+    }
+  ],
+  "page": 1,
+  "pageSize": 25,
+  "totalCount": 1
+}
+```
+
+---
+
+### `GET /policies/{name}` — Get policy details
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl "${BASE_URL}/policies/billing-policy"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/policies/billing-policy`)
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.get(
+    f'{BASE_URL}/policies/billing-policy'
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+```json
+{
+  "name": "billing-policy",
+  "description": "Governs the billing agent",
+  "owner": "team-finance",
+  "default": "Deny",
+  "rules": [
+    {
+      "name": "block-delete",
+      "priority": 100,
+      "effect": "Deny",
+      "conditions": [
+        { "field": "input.method", "operator": "eq", "value": "DELETE" }
+      ]
+    }
+  ]
+}
+```
+
+**Response** `404 Not Found`
+
+---
+
+## Proxy
+
+### `ANY /proxy/{url}` — Proxy a request
+
+The proxy endpoint forwards the original HTTP method, headers, and body to the specified upstream URL.
+
+It evaluates policies and may intercept the request for human review.
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X GET "${BASE_URL}/proxy/https://api.example.com/resource" \
+  -H "Authorization: Bearer $TOKEN"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/proxy/https://api.example.com/resource`, {
+  method: 'GET',
+  headers: { 'Authorization': `Bearer ${TOKEN}` }
+})
+.then(res => {
+  if (res.status === 202) {
+    console.log('Intercepted – HITL required:', res.headers.get('Location'));
+  }
+  return res.json();
+})
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.get(
+    f'{BASE_URL}/proxy/https://api.example.com/resource',
+    headers={'Authorization': f'Bearer {TOKEN}'}
+)
+if response.status_code == 202:
+    print('Intercepted – HITL review required:', response.headers.get('Location'))
+else:
+    print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+| Status | Description |
+|---|---|
+| Upstream status | Request was allowed and forwarded. Returns upstream response. |
+| `202 Accepted` | Request intercepted — HITL review required. `Location` header set. |
+| `401 Unauthorized` | Missing or invalid agent token |
+| `403 Forbidden` | Agent is revoked or policy denied the request |
+| `429 Too Many Requests` | Rate limit exceeded |
+| `503 Service Unavailable` | Circuit breaker open for upstream host |
+
+---
+
+## Human-in-the-Loop
+
+Base path: `/hitl`
+
+### `GET /hitl` — List pending HITL requests
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl "${BASE_URL}/hitl"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/hitl`)
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.get(
+    f'{BASE_URL}/hitl'
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+```json
+[
+  {
+    "id": "abc-123",
+    "method": "DELETE",
+    "url": "https://api.example.com/users/all",
+    "reason": "High risk score: 0.92",
+    "agentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "timestamp": "2025-01-01T12:00:00Z",
+    "expiresAt": "2025-01-01T13:00:00Z"
+  }
+]
+```
+
+---
+
+### `GET /hitl/{id}` — Get HITL request status
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl "${BASE_URL}/hitl/abc-123"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/hitl/abc-123`)
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.get(
+    f'{BASE_URL}/hitl/abc-123'
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+```json
+{
+  "id": "abc-123",
+  "status": "Pending",
+  "pending": { ... }
+}
+```
+
+**Response** `404 Not Found`
+
+---
+
+### `POST /hitl/{id}/approve` — Approve request
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X POST "${BASE_URL}/hitl/abc-123/approve" \
+  -H "Content-Type: application/json" \
+  -d '{ "comment": "Approved by ops team" }'
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/hitl/abc-123/approve`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ comment: 'Approved by ops team' })
+})
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.post(
+    f'{BASE_URL}/hitl/abc-123/approve',
+    json={'comment': 'Approved by ops team'}
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK` — upstream response proxied back.
+
+**Response** `404 Not Found` — expired or not found.
+
+---
+
+### `POST /hitl/{id}/deny` — Deny request
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X POST "${BASE_URL}/hitl/abc-123/deny" \
+  -H "Content-Type: application/json" \
+  -d '{ "comment": "Not authorised" }'
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/hitl/abc-123/deny`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ comment: 'Not authorised' })
+})
+.then(res => {
+  if (res.ok) console.log('Request denied');
+});
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.post(
+    f'{BASE_URL}/hitl/abc-123/deny',
+    json={'comment': 'Not authorised'}
+)
+print(response.status_code)
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+**Response** `404 Not Found`
+
+---
+
+## Health Check
+
+### `GET /health`
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl "${BASE_URL}/health"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/health`)
+  .then(res => res.json())
+  .then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.get(f'{BASE_URL}/health')
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+```json
+{
+  "status": "Healthy",
+  "healthCheckDuration": "00:00:00.0123456"
+}
+```
+
+**Response** `503 Service Unavailable` — one or more health checks are unhealthy.
+
+---
+
+## OpenAPI / Swagger
+
+Interactive API documentation is available at `/open-api` when the server is running. The raw specification is at `/open-api/synentra/specifications.json`.

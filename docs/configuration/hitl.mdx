@@ -1,0 +1,144 @@
+---
+id: hitl
+title: Human-in-the-Loop Configuration
+sidebar_label: Human-in-the-Loop
+sidebar_position: 6
+---
+
+# Human-in-the-Loop Configuration
+
+The `HumanInTheLoop` section controls when and how Synentra intercepts requests for manual operator review.
+
+---
+
+## Properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool?` | `true` | Enable / disable the HITL interception system |
+| `Threshold` | `double?` | `0.8` | Risk score threshold (0–1). Requests with a score above this are intercepted |
+| `TimeoutSeconds` | `int` | `3600` | How long (in seconds) a suspended request remains reviewable before auto-expiry |
+| `MaxPendingRequests` | `int` | `100` | Maximum number of concurrently pending HITL requests. `0` = unlimited |
+| `Notifications` | `object` | `{}` | Notification channel configuration. Each channel has an `Enabled` flag and channel-specific settings |
+
+---
+
+## Notifications
+
+When a request is suspended for HITL review, Synentra can notify external systems (Slack, Teams, PagerDuty, or a generic webhook).
+
+- Multiple channels can be enabled at the same time.
+- Notifications are best-effort: if one channel fails, the HITL request is still created and other channels can still succeed.
+
+### Slack
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `false` | Enable Slack notifications |
+| `WebhookUrl` | `string?` | `null` | Slack incoming webhook URL |
+| `Channel` | `string?` | `null` | Optional channel override (overrides the webhook default) |
+| `Username` | `string?` | `Synentra HITL` | Optional bot username |
+| `IconEmoji` | `string?` | `:robot_face:` | Optional bot icon emoji |
+
+Slack messages include the HITL request id, agent id, method, URL, reason, expiry window, and timestamp.
+
+### Microsoft Teams
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `false` | Enable Teams notifications |
+| `WebhookUrl` | `string?` | `null` | Teams incoming webhook connector URL |
+| `ThemeColor` | `string?` | `0076D7` | Optional card theme color (hex format) |
+
+Teams notifications are sent using the legacy MessageCard format and include the same HITL request details as Slack.
+
+### PagerDuty
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `false` | Enable PagerDuty notifications |
+| `RoutingKey` | `string?` | `null` | PagerDuty Events API v2 integration key (routing key) |
+| `ApiUrl` | `string` | `https://events.pagerduty.com/v2/enqueue` | PagerDuty Events API v2 URL |
+| `Severity` | `string` | `warning` | PagerDuty severity (for example: `info`, `warning`, `error`, `critical`) |
+
+PagerDuty notifications are sent via Events API v2 and include HITL details under `payload.custom_details`.
+
+### Generic webhook
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `false` | Enable generic webhook notifications |
+| `WebhookUrl` | `string?` | `null` | Webhook URL to `POST` to |
+| `Headers` | `Dictionary<string,string>?` | `null` | Optional headers to include in the request |
+
+---
+
+## Example
+
+```json
+"HumanInTheLoop": {
+  "Enabled": true,
+  "Threshold": 0.75,
+  "TimeoutSeconds": 7200,
+  "MaxPendingRequests": 50,
+  "Notifications": {
+    "Slack": {
+      "Enabled": true,
+      "WebhookUrl": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+      "Channel": "#security-reviews",
+      "Username": "Synentra HITL Bot",
+      "IconEmoji": ":shield:"
+    },
+    "Teams": {
+      "Enabled": true,
+      "WebhookUrl": "https://outlook.office.com/webhook/YOUR-WEBHOOK-URL",
+      "ThemeColor": "FF0000"
+    },
+    "PagerDuty": {
+      "Enabled": true,
+      "RoutingKey": "your-integration-key-here",
+      "ApiUrl": "https://events.pagerduty.com/v2/enqueue",
+      "Severity": "warning"
+    },
+    "GenericWebhook": {
+      "Enabled": true,
+      "WebhookUrl": "https://hooks.example.com/synentra-hitl",
+      "Headers": {
+      "X-Synentra-Token": "your-shared-secret"
+      }
+    }
+  }
+}
+```
+
+---
+
+## How It Works
+
+1. The `DecisionEngine` computes a risk score for every proxied request.
+2. If the score exceeds `Threshold`, the engine returns a `Hitl`.
+3. `Hitl Service` stores the full request in the cache with a TTL of `TimeoutSeconds`.
+4. The gateway responds with `202 Accepted` and a `Location` header pointing to `/hitl/{id}`.
+5. An operator polls `/hitl/{id}` or is notified via one or more configured notification channels.
+6. The operator calls `POST /hitl/{id}/approve` or `POST /hitl/{id}/deny`.
+7. On approval, `Hitl Service` re-executes the original request against the upstream.
+
+See [Human-in-the-Loop](../hitl) for the full operator workflow.
+
+---
+
+## Generic webhook payload
+
+When `HumanInTheLoop:Notifications:GenericWebhook` is enabled and `WebhookUrl` is configured, Synentra sends a `POST` request with a JSON body:
+
+```json
+{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "agentId": "...",
+  "method": "DELETE",
+  "url": "https://api.example.com/users/all",
+  "reason": "High risk score: 0.92",
+  "timestamp": "2025-01-01T12:00:00Z",
+  "expiresAt": "2025-01-01T14:00:00Z"
+}
+```

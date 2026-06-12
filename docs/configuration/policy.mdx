@@ -1,0 +1,73 @@
+---
+id: policy
+title: Policy Configuration
+sidebar_label: Policy
+sidebar_position: 4
+---
+
+# Policy Configuration
+
+The `Policy` section controls how Synentra evaluates request policies.
+
+---
+
+## Properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool?` | `true` | Enable or disable policy evaluation globally |
+| `DefaultProvider` | `string` | `"Internal"` | Active policy provider: `"Internal"` or `"Opa"` |
+| `Providers.Internal.Directory` | `string` | — | Directory path containing JSON policy files |
+| `Providers.Opa.BaseUrl` | `string` | — | Base URL of your OPA server |
+| `Providers.Opa.Path` | `string` | `"/v1/data/synentra/authz"` | OPA decision path |
+| `Providers.Opa.Timeout` | `TimeSpan?` | `00:00:05` | OPA HTTP request timeout |
+
+---
+
+## Internal Provider
+
+The **Internal** provider loads JSON policy definitions from the local filesystem using `FileSystemPolicyLoader`. Policies are cached in memory via `PolicyCacheService`.
+
+```json
+"Policy": {
+  "Enabled": true,
+  "DefaultProvider": "Internal",
+  "Providers": {
+    "Internal": { "Directory": "./policies" }
+  }
+}
+```
+
+Policy files must be placed in the configured directory and named `<policy-name>.json`. See [Policies](../policies/overview) for the file format.
+
+---
+
+## OPA Provider
+
+The **OPA** provider delegates evaluation to an external [Open Policy Agent](https://www.openpolicyagent.org/) server.
+
+```json
+"Policy": {
+  "Enabled": true,
+  "DefaultProvider": "Opa",
+  "Providers": {
+    "Opa": {
+      "BaseUrl": "http://localhost:8181",
+      "Path": "/v1/data/synentra/authz",
+      "Timeout": "00:00:05"
+    }
+  }
+}
+```
+
+Synentra posts a JSON input document to OPA containing the full `RequestContext` (agent ID, method, path, headers, body, trust score, policy name) and reads the `allow`, `deny`, and `hitl` decisions from the response.
+
+---
+
+## Disabling Policy Evaluation
+
+Set `Enabled: false` to skip policy evaluation entirely. Risk scoring and semantic analysis (if enabled) still run.
+
+```json
+"Policy": { "Enabled": false }
+```

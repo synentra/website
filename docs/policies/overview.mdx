@@ -1,0 +1,152 @@
+---
+id: overview
+title: Policies Overview
+sidebar_label: Overview
+sidebar_position: 1
+---
+
+# Policies Overview
+
+**Policies** define the rules that govern what an agent is permitted to do. Each policy is a JSON document containing a set of prioritised rules with conditions. Synentra evaluates policies as the first step in the decision pipeline.
+
+---
+
+## Domain Model
+
+### PolicyDefinition
+
+| Property | Type | Description |
+|---|---|---|
+| `Name` | `string` | Unique policy identifier (matches filename without `.json`) |
+| `Description` | `string?` | Human-readable description |
+| `Owner` | `string` | Owner team or identifier |
+| `CreatedOn` | `DateTime?` | Creation timestamp |
+| `Default` | `PolicyType` | Default effect if no rule matches: `Allow` or `Deny` |
+| `Rules` | `List<PolicyRule>` | Ordered list of rules (evaluated by priority) |
+
+### PolicyRule
+
+| Property | Type | Description |
+|---|---|---|
+| `Name` | `string` | Rule identifier |
+| `Reason` | `string?` | Human-readable reason shown in decision audit |
+| `Priority` | `int` | Higher value = evaluated first |
+| `Effect` | `PolicyType` | `Allow`, `Deny`, or `Hitl` |
+| `Conditions` | `List<PolicyRuleCondition>` | All conditions must match (logical AND) |
+
+### PolicyRuleCondition
+
+| Property | Type | Description |
+|---|---|---|
+| `Field` | `string` | Input field path (e.g., `input.method`, `input.path`) |
+| `Operator` | `string` | Comparison operator (see below) |
+| `Value` | `object` | Value to compare against |
+
+### Supported Operators
+
+| Operator | Description |
+|---|---|
+| `eq` | Equals |
+| `ne` | Not equals |
+| `gt` | Greater than |
+| `lt` | Less than |
+| `ge` | Greater than or equal |
+| `le` | Less than or equal |
+| `in` | Value is in array |
+| `contains` | String contains substring |
+| `startswith` | String starts with value |
+| `endswith` | String ends with value |
+| `regex` | Regex match |
+
+### Available Input Fields
+
+Conditions can reference any field in the `RequestContext` using dot notation under the `input.` prefix:
+
+| Field | Description |
+|---|---|
+| `input.method` | HTTP method (`GET`, `POST`, `DELETE`, …) |
+| `input.path` | Request path and query (`/users/123`) |
+| `input.agentId` | Agent GUID |
+| `input.policyName` | Assigned policy name |
+| `input.trustScore` | Agent trust score (0.0–1.0) |
+| `input.targetUrl` | Full target URL |
+| `input.body` | Raw request body (string) |
+
+---
+
+## Policy File Format
+
+Policies are stored as `.json` files in the directory configured under `Policy.Providers.Internal.Directory`.
+
+```json title="policies/billing-policy.json"
+{
+  "name": "billing-policy",
+  "description": "Governs the billing agent",
+  "owner": "team-finance",
+  "default": "Deny",
+  "rules": [
+    {
+      "name": "block-delete",
+      "reason": "Billing agent must never delete resources",
+      "priority": 100,
+      "effect": "Deny",
+      "conditions": [
+        { "field": "input.method", "operator": "eq", "value": "DELETE" }
+      ]
+    },
+    {
+      "name": "require-hitl-for-bulk-export",
+      "reason": "Bulk exports require human approval",
+      "priority": 90,
+      "effect": "Hitl",
+      "conditions": [
+        { "field": "input.path", "operator": "regex", "value": "/export|/bulk" }
+      ]
+    },
+    {
+      "name": "allow-read",
+      "reason": "Read access is permitted",
+      "priority": 10,
+      "effect": "Allow",
+      "conditions": [
+        { "field": "input.method", "operator": "in", "value": ["GET", "HEAD"] }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Evaluation Order
+
+1. Rules are sorted by `Priority` (descending — highest first).
+2. Each rule's **conditions** are evaluated with logical **AND** — all must match.
+3. The **first matching rule** determines the outcome (`Allow`, `Deny`, or `Hitl`).
+4. If **no rule matches**, the `Default` effect is applied.
+
+---
+
+## API Endpoints
+
+Base path: `/policies`
+
+### List Policies
+
+```http
+GET /policies?page=1&pageSize=25
+```
+
+### Get Policy Details
+
+```http
+GET /policies/{name}
+```
+
+See the [API Reference](../api-reference) for full request/response schemas.
+
+---
+
+## OPA Integration
+
+For advanced policy scenarios (e.g., complex Rego rules, external data), configure the OPA provider. See [Policy Configuration](../configuration/policy) for setup details.

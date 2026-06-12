@@ -1,0 +1,137 @@
+---
+id: proxy
+title: Proxying Requests
+sidebar_label: Proxy
+sidebar_position: 8
+---
+
+# Proxying Requests
+
+Synentra acts as a **reverse proxy gateway**. Any HTTP request prefixed with `/proxy/` is intercepted, evaluated, and either forwarded to the upstream service or blocked/held.
+
+---
+
+## URL Format
+
+```
+GET /proxy/<full-upstream-url>
+```
+
+The full absolute URL of the upstream target is embedded in the path:
+
+```http
+GET /proxy/https://api.example.com/users/123
+Authorization: Bearer <agent-jwt>
+```
+
+Synentra will:
+1. Extract `https://api.example.com/users/123` as the target.
+2. Set `context.Request.Path` to `/users/123` and forward to `api.example.com`.
+
+:::info
+Query strings embedded in the target URL are preserved and forwarded correctly.
+:::
+
+---
+
+## Request Pipeline
+
+Every proxied request goes through the following stages in order:
+
+### 1. Agent Authentication
+
+`Middleware` validates the `Authorization: Bearer <token>` header.
+
+- Missing or invalid token → the request continues unauthenticated.
+- `Middleware` then requires `AgentId` → returns `401 Unauthorized` if absent.
+
+### 2. Agent Status Check
+
+If the agent does not exist or has `Status = Revoked`, the request is rejected with `403 Forbidden`.
+
+### 3. Rate Limiting
+
+If the agent has exceeded its configured `RequestsPerMinute`, the gateway returns:
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 60
+```
+
+### 4. Circuit Breaker
+
+If the circuit for the target host is open, the gateway returns `503 Service Unavailable`.
+
+### 5. Decision Engine
+
+A `RequestContext` is constructed and passed to `Decision Engine` for Evaluating. The engine runs three evaluations in sequence:
+
+| Stage | Description | Short-circuits if… |
+|---|---|---|
+| **Policy** | Evaluates the agent's assigned policy rules | Rule matches Deny or Hitl |
+| **Risk Scoring** | Computes a weighted risk score | Score exceeds HITL threshold |
+| **Semantic** | LLM/ONNX intent classification (if enabled) | Model verdict is negative |
+
+### 6. Decision Outcome
+
+| Outcome | HTTP Response | Description |
+|---|---|---|
+| `Allow` | Forward to upstream | Request is forwarded |
+| `Deny` | `403 Forbidden` | Request body contains the denial reason |
+| `Hitl` | `202 Accepted` | `Location` header set to `/hitl/status/{id}` |
+
+---
+
+## Request Forwarding
+
+When a request is allowed, Synentra constructs a new `Message` and forwards it.
+
+**Headers forwarded:**
+- All headers from the original request, **except**: `Authorization`, `Host`, `Connection`, `Content-Length`
+
+**Headers NOT forwarded:**
+- `Authorization` — This is Synentra's internal JWT, not intended for the upstream.
+
+---
+
+## `RequestContext` Model
+
+The following data is available during policy/risk/semantic evaluation:
+
+| Field | Type | Description |
+|---|---|---|
+| `Method` | `string` | HTTP method |
+| `Path` | `string` | Path and query string |
+| `TargetUrl` | `string` | Full upstream URL |
+| `Headers` | `Dictionary<string, string>` | Sanitised request headers |
+| `AgentId` | `Guid` | Authenticated agent ID |
+| `PolicyName` | `string?` | Assigned policy name |
+| `TrustScore` | `double` | Agent's current trust score |
+| `Body` | `string?` | Raw request body |
+
+---
+
+## Example: Proxying a GET Request
+
+```http
+GET /proxy/https://jsonplaceholder.typicode.com/todos/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5...
+```
+
+If the agent is active, not rate-limited, and the decision engine allows it, Synentra forwards the request and returns the upstream response unchanged.
+
+---
+
+## Example: HITL Interception
+
+```http
+DELETE /proxy/https://api.example.com/users/all
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5...
+
+HTTP/1.1 202 Accepted
+Location: /hitl/abc-123
+
+Request pending approval. Poll /hitl/abc-123
+```
+
+The operator can then approve or deny this request via the [HITL endpoints](./hitl).
