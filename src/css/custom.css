@@ -41,6 +41,12 @@
   --ifm-color-primary-lighter: #80ecf3;
   --ifm-color-primary-lightest: #bff6f9;
   
+  --ifm-background-color: #0a0f14 !important;
+  --ifm-background-surface-color: #0f1720;
+
+  --ifm-navbar-background-color: rgba(10, 15, 20, 1.0);
+  --ifm-footer-background-color: rgba(10, 15, 20, 1.0);
+
   /* Dark Mode Borders & Highlights */
   --ifm-color-border-gray: #111827; /* Deep slate-950 obsidian background */
   --ifm-code-font-size: 90%;
@@ -54,6 +60,16 @@
   --ifm-hero-title-text: #f8fafc;
   --ifm-hero-subtext: #94a3b8;     /* Tech muted gray */
   --ifm-hero-border: rgba(33, 240, 253, 0.2); /* Integrated neon-cyan glow */
+}
+
+.navbar {
+  border-bottom: 1px solid var(--ifm-toc-border-color) !important;
+  box-shadow: none !important;
+}
+
+.footer {
+  border-top: 1px solid var(--ifm-toc-border-color) !important;
+  box-shadow: none !important;
 }
 
 /* Firefox */
