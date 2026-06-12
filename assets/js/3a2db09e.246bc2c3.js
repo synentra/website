@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunksynentra=globalThis.webpackChunksynentra||[]).push([[8121],{8070:n=>{n.exports=JSON.parse('{"tags":[{"label":"Introduction","permalink":"/blog/tags/introduction","count":1}]}')}}]);
