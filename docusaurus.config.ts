@@ -6,33 +6,21 @@ const config: Config = {
   title: 'Synentra',
   tagline: 'The essential security layer for autonomous AI. Dynamically evaluate agent intent, enforce strict guardrails, and seamlessly route high-risk operations to human-in-the-loop approval workflows. Secure your AI runtime effortlessly.',
   favicon: 'img/favicon.ico',
-
-  // Set the production url of your site here
   url: 'https://synentra.io',
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
-
-  // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'synentra', // Usually your GitHub org/user name.
-  projectName: 'website', // Usually your repo name.
-  
+  organizationName: 'synentra',
+  projectName: 'website',
   onBrokenLinks: 'throw',
   markdown: {
+    mermaid: true,
     hooks: {
       onBrokenMarkdownLinks: 'warn',
     },
   },
-
-  // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
   },
-
   presets: [
     [
       'classic',
@@ -58,7 +46,6 @@ const config: Config = {
       } satisfies Preset.Options,
     ],
   ],
-
   plugins: [
     [
       '@docusaurus/plugin-google-gtag',
@@ -68,10 +55,15 @@ const config: Config = {
       },
     ],
   ],
-
+  themes: ['@docusaurus/theme-mermaid'],
   themeConfig: {
-    // Replace with your project's social card
-    image: 'img/OpenGraph.jpg',
+    image: 'img/banner.jpg',
+    colorMode: {
+      respectPrefersColorScheme: true,
+    },
+    mermaid: {
+      theme: { light: 'neutral', dark: 'dark' },
+    },
     navbar: {
       title: 'Synentra',
       logo: {
