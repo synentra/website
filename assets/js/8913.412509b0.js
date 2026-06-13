@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunksynentra=globalThis.webpackChunksynentra||[]).push([[8913],{8913:(s,a,n)=>{n.r(a)}}]);

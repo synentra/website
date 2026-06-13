@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunksynentra=globalThis.webpackChunksynentra||[]).push([[7472],{5513:e=>{e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Introducing the Synentra blog","permalink":"/blog/introducing-the-synentra-blog","unlisted":false,"date":"2026-06-12T00:00:00.000Z"}]}')}}]);

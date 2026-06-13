@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunksynentra=globalThis.webpackChunksynentra||[]).push([[8947],{6600:a=>{a.exports=JSON.parse('{"authors":[{"name":"Maintainers","title":"Synentra project maintainers","imageURL":"/img/maintainer.png","key":"maintainers","page":null,"count":1}]}')}}]);
