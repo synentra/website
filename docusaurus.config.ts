@@ -140,9 +140,9 @@ const config: Config = {
     },
     algolia: {
       container: '#docsearch',
-      appId: 'CVJYAI977T',
-      apiKey: 'd87728152845458be0d04dfecc2929d4',
-      indexName: 'Docs',
+      appId: '8C6G7HGXQ8',
+      apiKey: '3eb0ed3fc15dbcc18810b002be227129',
+      indexName: 'website',
       contextualSearch: true,
       searchParameters: {},
       searchPagePath: 'search',
