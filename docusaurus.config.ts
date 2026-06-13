@@ -62,7 +62,7 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     mermaid: {
-      theme: { light: 'neutral', dark: 'forest' },
+      theme: { light: 'neutral', dark: 'dark' },
     },
     navbar: {
       title: 'Synentra',

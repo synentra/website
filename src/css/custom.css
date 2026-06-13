@@ -23,7 +23,7 @@
   --ifm-link-hover-color: #8b6ff2;
 }
 
-[data-theme='dark'] {
+html[data-theme='dark'] {
   --ifm-color-primary: #0ecfe0;
   --ifm-color-primary-dark: #09b8c9;
   --ifm-color-primary-darker: #079fae;
