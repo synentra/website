@@ -97,8 +97,8 @@ function HomepageContributors() {
 export default function Home(): JSX.Element {
   const {siteConfig} = useDocusaurusContext();
   return (
-    <Layout title={`Streamline and orchestrate processes with Synentra, .NET-based workflow automation platform`}
-      description="Design, control, and automate every step of your workflow—linking ideas, decisions, and actions into a single, smart execution engine—all without writing a line of code.">
+    <Layout title={`Intent-Aware Governance Gateway for Autonomous AI Agents`}
+      description="The essential security layer for autonomous AI. Dynamically evaluate agent intent, enforce strict guardrails, and seamlessly route high-risk operations to human-in-the-loop approval workflows. Secure your AI runtime effortlessly.">
       <HomepageHeader />
       <main>
         <HomepageAboutSynentra />
