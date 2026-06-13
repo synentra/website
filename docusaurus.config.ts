@@ -139,24 +139,13 @@ const config: Config = {
       Built with <a href="https://docusaurus.io/" target="_blank">Docusaurus</a>. Hosted at <a href="https://pages.github.com/" target="_blank">Github Pages</a>.`
     },
     algolia: {
-      // The application ID provided by Algolia
-      appId: 'RPBB8MPKU9',
-
-      // Public API key: it is safe to commit it
-      apiKey: 'bfa75134aabeff74b771bad3406ddc6a',
-
-      indexName: 'genofow',
-
-      // Optional: see doc section below
+      container: '#docsearch',
+      appId: 'CVJYAI977T',
+      apiKey: 'd87728152845458be0d04dfecc2929d4',
+      indexName: 'Docs',
       contextualSearch: true,
-
-      // Optional: Algolia search parameters
       searchParameters: {},
-
-      // Optional: path for search page that enabled by default (`false` to disable it)
       searchPagePath: 'search',
-
-      //... other Algolia params
     },
     prism: {
       theme: prismThemes.github,
