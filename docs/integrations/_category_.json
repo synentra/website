@@ -1,0 +1,9 @@
+{
+  "label": "Integrations",
+  "position": 13,
+  "link": {
+    "type": "generated-index",
+    "slug": "/integrations",
+    "description": "Connect your AI agents with enterprise tools and services to enforce security policies, gain deep observability, and automate governance across all operations."
+  }
+}

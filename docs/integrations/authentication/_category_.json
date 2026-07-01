@@ -1,0 +1,9 @@
+{
+  "label": "Authentication",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "slug": "/integrations/authentication",
+    "description": "Secure your AI agent endpoints with enterprise-grade authentication. Integrate with leading identity providers and standards like OAuth 2.0, OIDC, and JWT to enforce trusted access across all operations."
+  }
+}
