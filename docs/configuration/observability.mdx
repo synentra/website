@@ -28,7 +28,7 @@ The `Observability` section configures structured logging sinks for Synentra.
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `Enabled` | `bool` | `true` | Enable file logging |
-| `Path` | `string` | `./logs/synentra-.log` | Log file path (supports Serilog rolling tokens like `-{Date}`) |
+| `LogPath` | `string` | `./logs/synentra-.log` | Log file path (supports Serilog rolling tokens like `-{Date}`) |
 
 ```json
 "Observability": {
@@ -36,7 +36,7 @@ The `Observability` section configures structured logging sinks for Synentra.
     "DefaultLogLevel": "Information",
     "File": {
       "Enabled": true,
-      "Path": "./logs/synentra-.log"
+      "LogPath": "./logs/synentra-.log"
     }
   }
 }
@@ -51,15 +51,15 @@ The `Observability` section configures structured logging sinks for Synentra.
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `Enabled` | `bool` | `false` | Enable Seq logging |
-| `ServerUrl` | `string` | `http://localhost:5341` | Seq server URL |
-| `ApiKey` | `string` | — | Seq API key (if authentication is enabled) |
+| `Url`     | `string` | `http://localhost:5341` | Seq server URL |
+| `ApiKey`  | `string` | — | Seq API key (if authentication is enabled) |
 
 ```json
 "Observability": {
   "Logging": {
     "Seq": {
       "Enabled": true,
-      "ServerUrl": "http://seq:5341",
+      "Url": "http://seq:5341",
       "ApiKey": "your-seq-api-key"
     }
   }
