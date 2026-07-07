@@ -1,0 +1,225 @@
+---
+id: seq
+title: Structured Logging with Seq
+sidebar_label: Seq
+---
+
+# Structured Logging with Seq
+
+Synentra can stream structured logs directly to Seq, providing centralized log storage, powerful search capabilities, dashboards, and diagnostics.
+
+Seq is recommended for development, staging, and production environments where multiple Synentra instances need to be monitored.
+
+## Overview
+
+Using Seq allows you to:
+
+- Collect logs from multiple Synentra instances
+- Search structured properties
+- Diagnose failures quickly
+- Filter by log level
+- Create dashboards
+- Configure alerts
+
+---
+
+## Prerequisites
+
+- Docker (recommended)
+- A running Seq instance
+
+---
+
+## Start Seq
+
+Create a `docker-compose.yml` file.
+
+```yaml
+services:
+  seq:
+    image: datalust/seq:latest
+    container_name: synentra-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_ADMINPASSWORD: "ChangeMe123!"
+    ports:
+      - "8081:80"
+      - "5341:5341"
+    volumes:
+      - seq-data:/data
+    networks:
+      - synentra-network
+
+  synentra:
+    image: ghcr.io/synentra/synentra:latest
+    container_name: synentra
+    ports:
+      - "7080:7080"
+    volumes:
+      - ./appsettings.json:/app/appsettings.json:ro
+    depends_on:
+      - seq
+    networks:
+      - synentra-network
+
+networks:
+  synentra-network:
+    driver: bridge
+
+volumes:
+  seq-data:
+```
+
+Start Seq.
+
+```bash
+docker compose up -d
+```
+
+Open Seq:
+
+```
+http://localhost:5341
+```
+
+---
+
+## Configure Synentra
+
+Enable Seq logging.
+
+```json
+{
+  "Observability": {
+    "Logging": {
+      "Seq": {
+        "Enabled": true,
+        "Url": "http://localhost:5341",
+        "ApiKey": "",
+        "LogLevel": "Information"
+      }
+    }
+  }
+}
+```
+
+### Configuration Options
+
+| Option | Description |
+|----------|-------------|
+| `Enabled` | Enables Seq logging. |
+| `Url` | URL of the Seq server. |
+| `ApiKey` | Optional API key when authentication is enabled. |
+| `LogLevel` | Minimum log level sent to Seq. |
+
+---
+
+## Example Configuration
+
+```json
+{
+  "Observability": {
+    "Logging": {
+      "Seq": {
+        "Enabled": true,
+        "Url": "http://seq.company.internal",
+        "ApiKey": "your-api-key",
+        "LogLevel": "Information"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Viewing Logs
+
+Open the Seq web interface.
+
+```
+http://localhost:8081
+```
+
+New log events appear automatically as Synentra runs.
+
+---
+
+## Example Structured Event
+
+A typical event contains structured properties similar to:
+
+```json
+{
+  "@t":"2026-07-07T20:39:12.7502255Z",
+  "@mt":"Now listening on: {address}",
+  "@m":"Now listening on: http://[::]:7080",
+  "@i":"06c3fe8d",
+  "EnvironmentUserName":"f4e4ab4a92d6\\root",
+  "EventId":{
+    "Id":14,
+    "Name":"ListeningOnAddress"
+  },
+  "MachineName":"f4e4ab4a92d6",
+  "SourceContext":"Microsoft.Hosting.Lifetime",
+  "ThreadId":1,
+  "address":"http://[::]:7080"
+}
+```
+
+Because the properties are structured, they can be queried individually.
+
+---
+
+## Useful Queries
+
+### Errors
+
+```
+@Level = 'Error'
+```
+
+### Warnings
+
+```
+@Level = 'Warning'
+```
+
+### Requests for Machine Name
+
+```
+MachineName = 'f4e4ab4a92d6'
+```
+
+---
+
+## Recommended Log Levels
+
+| Environment | Log Level |
+|-------------|-----------|
+| Development | Debug |
+| Testing | Information |
+| Production | Information or Warning |
+
+---
+
+## Troubleshooting
+
+### No events appear in Seq
+
+Verify:
+
+- Seq is running.
+- The configured URL is correct.
+- Firewalls allow access.
+- API keys are valid if authentication is enabled.
+
+### Connection Issues
+
+Verify connectivity.
+
+```bash
+curl http://localhost:5341
+```
+
+If the server responds, Synentra should be able to publish events.

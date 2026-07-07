@@ -1,0 +1,186 @@
+---
+id: file
+title: Structured Logging with File
+sidebar_label: File
+---
+
+# Structured Logging with File
+
+Synentra includes built-in support for writing structured logs to rolling log files.
+
+File logging is useful for local development, troubleshooting, audit trails, and environments where centralized log aggregation is not required.
+
+## Overview
+
+With file logging you can:
+
+- Persist structured application logs
+- Automatically rotate log files
+- Configure retention policies
+- Control log verbosity
+- Review logs using any text editor or log analysis tool
+
+---
+
+## Configuration
+
+Enable file logging in your `appsettings.json`.
+
+```json
+{
+  "Observability": {
+    "Logging": {
+      "File": {
+        "Enabled": true,
+        "LogPath": "logs/log-.txt",
+        "RollingInterval": "Day",
+        "LogLevel": "Warning",
+        "RetainedFileCountLimit": 7
+      }
+    }
+  }
+}
+```
+
+### Configuration Options
+
+| Option | Description |
+|----------|-------------|
+| `Enabled` | Enables or disables file logging. |
+| `LogPath` | Output path for log files. A rolling filename is automatically generated. |
+| `RollingInterval` | Log rolling interval (`Infinite`, `Year`, `Month`, `Day`, `Hour`, `Minute`). |
+| `LogLevel` | Minimum log level written to the file. |
+| `RetainedFileCountLimit` | Maximum number of log files to keep before old files are removed. |
+
+---
+
+## Example
+
+```json
+{
+  "Observability": {
+    "Logging": {
+      "File": {
+        "Enabled": true,
+        "LogPath": "logs/synentra-.log",
+        "RollingInterval": "Day",
+        "LogLevel": "Information",
+        "RetainedFileCountLimit": 30
+      }
+    }
+  }
+}
+```
+
+This configuration creates a new log file every day and retains the most recent 30 log files.
+
+---
+
+## Generated Log Files
+
+Example directory structure:
+
+```
+logs/
+├── synentra-20260707.log
+├── synentra-20260708.log
+├── synentra-20260709.log
+```
+
+---
+
+## Viewing Logs
+
+Display the latest log entries.
+
+Linux/macOS
+
+```bash
+tail -f logs/synentra-20260707.log
+```
+
+Windows PowerShell
+
+```powershell
+Get-Content logs\synentra-20260707.log -Wait
+```
+
+Search for warnings:
+
+```bash
+grep WRN logs/synentra-20260707.log
+```
+
+Search for errors:
+
+```bash
+grep ERR logs/synentra-20260707.log
+```
+
+---
+
+## Example Log Output
+
+```text
+2026-07-07 10:45:32.421 [INF] Request received
+AgentId: agent-001
+RequestId: req-84fa76
+
+2026-07-07 10:45:32.538 [INF] Policy evaluation completed
+Result: Allow
+Duration: 12ms
+
+2026-07-07 10:45:32.551 [INF] Request completed
+StatusCode: 200
+Duration: 167ms
+```
+
+Because Synentra uses structured logging, each log event contains searchable properties instead of only plain text.
+
+---
+
+## Recommended Log Levels
+
+| Environment | Log Level |
+|-------------|-----------|
+| Development | Debug |
+| Testing | Information |
+| Production | Warning |
+
+Use lower log levels in production to reduce storage requirements and improve performance.
+
+---
+
+## Log Retention
+
+Synentra automatically removes old log files according to the configured retention policy.
+
+Example:
+
+```json
+"RetainedFileCountLimit": 30
+```
+
+This keeps the latest 30 rolling log files and deletes older ones automatically.
+
+---
+
+## Troubleshooting
+
+### No log files are created
+
+Verify that:
+
+- File logging is enabled.
+- The application has write permissions to the log directory.
+- The configured log path exists or can be created.
+
+### Log files grow too quickly
+
+Increase the minimum log level.
+
+```json
+"LogLevel": "Warning"
+```
+
+or reduce the retention period.
