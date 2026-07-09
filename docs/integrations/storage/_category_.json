@@ -1,0 +1,9 @@
+{
+  "label": "Storage",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "slug": "/integrations/storage",
+    "description": "Configure storage providers used by Synentra for caching, persistence, and other infrastructure services. This section includes integration guides and configuration options for supported storage technologies."
+  }
+}

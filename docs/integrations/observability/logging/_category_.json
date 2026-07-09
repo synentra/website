@@ -1,9 +1,9 @@
 {
   "label": "Logging",
-  "position": 3,
+  "position": 1,
   "link": {
     "type": "generated-index",
-    "slug": "/integrations/logging",
+    "slug": "/integrations/observability/logging",
     "description": "Learn how to configure and integrate logging in Synentra to capture application events, monitor system behavior, and simplify troubleshooting. This section covers supported logging integrations, configuration guidance, and best practices for implementing consistent, production-ready logging across your Synentra applications."
   }
 }

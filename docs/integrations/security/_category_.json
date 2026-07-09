@@ -1,0 +1,9 @@
+{
+  "label": "Security",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "slug": "/integrations/security",
+    "description": "Enhance the security of your Synentra deployment by integrating with authentication, identity, and other security services. Explore supported integrations, configuration guides, and best practices for securing agent communication and infrastructure."
+  }
+}
