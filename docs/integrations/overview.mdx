@@ -5,21 +5,36 @@ sidebar_label: Overview
 sidebar_position: 1
 ---
 
-# Synentra Integrations
+# Integrations
 
-Synentra provides comprehensive integration capabilities with various enterprise tools and services to enable secure, observable, and policy-governed AI agent operations.
+Synentra integrates with a wide range of enterprise technologies to extend authentication, observability, storage, and other platform capabilities. These integrations enable secure, scalable, and production-ready AI agent deployments while leveraging your existing infrastructure.
 
 ## Available Integrations
 
-### Authentication
+### Security
 
 #### [Agent Authentication](./security/authentication)
-JWT-based authentication supporting Keycloak, Auth0, and Azure AD.
 
-**Use Cases:**
-- Authenticate AI agents with JWT tokens
-- Implement role-based access control
-- Integrate with enterprise identity providers
-- Track agent identity for audit trails
+Secure AI agents using JWT-based authentication with external identity providers such as Keycloak, Auth0, and Microsoft Entra ID.
 
-**Setup Time:** ~30-45 minutes (varies by provider)
+**Estimated setup time:** 10–15 minutes
+
+---
+
+### Observability
+
+#### [Structured Logging](./observability/logging)
+
+Enable structured, centralized logging with Serilog, supporting console, file, and other logging providers for monitoring and troubleshooting.
+
+**Estimated setup time:** ~10 minutes
+
+---
+
+### Storage
+
+#### [Redis Cache](./storage/cache)
+
+Configure Redis as a distributed cache for high-performance storage of trust scores, policy evaluations, intent classifications, and other runtime data.
+
+**Estimated setup time:** ~15 minutes
