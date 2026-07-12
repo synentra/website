@@ -4,54 +4,36 @@
   --brand-primary-light: #EF4444;
   --brand-primary-soft: #FCA5A5;
   --brand-primary-muted: #FEE2E2;
-
   --surface-background: #FFFFFF;
   --surface-primary: #FFFFFF;
   --surface-secondary: #F3F4F6;
-
   --text-primary: #111827;
   --text-secondary: #4B5563;
   --text-muted: #6B7280;
-
-  --border-color: #E5E7EB;
-
+  --border-color: rgba(48,48,48,0.2);
   --glass-background: rgba(255,255,255,0.65);
   --glass-border: rgba(48,48,48,0.2);
-
-  /* Docusaurus */
   --ifm-color-primary: var(--brand-primary);
   --ifm-color-primary-dark: var(--brand-primary-dark);
   --ifm-color-primary-darker: #7F1D1D;
   --ifm-color-primary-darkest: #450A0A;
-
   --ifm-color-primary-light: var(--brand-primary-light);
   --ifm-color-primary-lighter: #F87171;
   --ifm-color-primary-lightest: var(--brand-primary-muted);
-
   --ifm-link-color: var(--brand-primary);
   --ifm-link-hover-color: var(--brand-primary-light);
-
   --ifm-background-color: var(--surface-background);
   --ifm-background-surface-color: var(--surface-primary);
-
-  /* Hero */
   --hero-background-start: #FFFFFF;
   --hero-background-middle: #F9FAFB;
   --hero-background-end: #FEE2E2;
-
   --hero-title-color: var(--text-primary);
   --hero-subtitle-color: var(--text-secondary);
-
   --hero-glow-color: rgba(198, 40, 40, 0.3);
-
-  /* Effects */
   --glass-bg: rgba(255,255,255,.55);
   --glass-border-color: rgba(198,40,40,.15);
-
   --shadow-color: rgba(0,0,0,.12);
-
   --docusaurus-highlighted-code-line-bg: rgba(128, 128, 128, 0.08);
-
   --grid-color: rgba(15,23,42,.05);
 }
 
@@ -59,67 +41,29 @@ html[data-theme='dark'] {
   --surface-background: #080B12;
   --surface-primary: #080B12;
   --surface-secondary: #080B12;
-
   --text-primary: #F8FAFC;
   --text-secondary: #CBD5E1;
   --text-muted: #94A3B8;
-
   --border-color: #1F2937;
-
-  --glass-background:
-      rgba(255,255,255,.04);
-
+  --glass-background: rgba(255,255,255,.04);
   --glass-border:#1F2937;
-
-  --ifm-color-primary:
-      #EF4444;
-
-  --ifm-color-primary-dark:
-      #DC2626;
-
-  --ifm-color-primary-darker:
-      #C62828;
-
-  --ifm-color-primary-darkest:
-      #991B1B;
-
-  --ifm-color-primary-light:
-      #F87171;
-
-  --ifm-color-primary-lighter:
-      #FCA5A5;
-
-  --ifm-color-primary-lightest:
-      #FEE2E2;
-
-  --ifm-background-color:
-      var(--surface-background);
-
-  --ifm-background-surface-color:
-      var(--surface-primary);
-
-  --hero-background-start:
-      #080B12;
-
-  --hero-background-middle:
-      #080B12;
-
-  --hero-background-end:
-      #111827;
-
-  --hero-title-color:
-      #F8FAFC;
-
-  --hero-subtitle-color:
-      #CBD5E1;
-
+  --ifm-color-primary: #EF4444;
+  --ifm-color-primary-dark: #DC2626;
+  --ifm-color-primary-darker: #C62828;
+  --ifm-color-primary-darkest: #991B1B;
+  --ifm-color-primary-light: #F87171;
+  --ifm-color-primary-lighter: #FCA5A5;
+  --ifm-color-primary-lightest: #FEE2E2;
+  --ifm-background-color: var(--surface-background);
+  --ifm-background-surface-color: var(--surface-primary);
+  --hero-background-start: #080B12;
+  --hero-background-middle: #080B12;
+  --hero-background-end: #111827;
+  --hero-title-color: #F8FAFC;
+  --hero-subtitle-color: #CBD5E1;
   --hero-glow-color: rgba(239,68,68,.3);
-
-  --docusaurus-highlighted-code-line-bg:
-      rgba(239,68,68,.15);
-
+  --docusaurus-highlighted-code-line-bg: rgba(239,68,68,.15);
   --grid-color: rgba(255,255,255,.04);
-
   --ifm-navbar-background-color: #080B12;
   --ifm-footer-background-color: #080B12;
 }
@@ -196,14 +140,14 @@ html[data-theme='dark'] {
 
 .brand-name {
   color: var(--ifm-color-primary);
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
 /* Hero Title */
 .hero-title {
   font-size:clamp(3rem,6vw,5rem);
-  font-weight:800;
+  font-weight:700;
   line-height:1.0;
   letter-spacing:-0.04em;
   margin:auto;
@@ -215,13 +159,13 @@ html[data-theme='dark'] {
   font-size: 1.25rem;
   line-height: 1.8;
   margin: 1.5rem auto 0;
-  color: var(--ifm-hero-subtext);
+  color: var(--ifm-color-emphasis-600);
 }
 
 .hero--background {
   position: relative;
   overflow: hidden;
-  padding: 4rem 1rem 3rem;
+  padding: 3rem 1rem 1rem;
   color: var(--ifm-hero-title-text);
 
   background:
@@ -697,4 +641,23 @@ html[data-theme='dark'] {
   .contributorsGridWrapper {
     padding: 1.5rem;
   }
+}
+
+.tabs-container {
+  margin-bottom: 0 !important;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.tabs {
+  margin-bottom: 0 !important;
+}
+
+.margin-top--md {
+  margin-top: 0 !important;
+}
+
+.codeBlockContent {
+  border-radius: 12px;
 }

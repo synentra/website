@@ -6,6 +6,8 @@ import HomepageFeatures from '@site/src/components/Homepage/features';
 import GitHubContributors from '@site/src/components/GitHubContributors';
 import FeatureHighlights from '@site/src/components/FeatureHighlights';
 import Heading from '@theme/Heading';
+import InstallationBox from '@site/src/components/InstallationBox';
+import FadingLine from '../components/FadingLine';
 
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();
@@ -35,6 +37,7 @@ function HomepageHeader() {
             </div>
           </div>
         </div>
+        <InstallationBox />
         <FeatureHighlights />
       </div>
     </header>
@@ -106,8 +109,11 @@ export default function Home(): JSX.Element {
       description="The essential security layer for autonomous AI. Dynamically evaluate agent intent, enforce strict guardrails, and seamlessly route high-risk operations to human-in-the-loop approval workflows. Secure your AI runtime effortlessly.">
       <HomepageHeader />
       <main>
+        <FadingLine  />
         <HomepageAboutSynentra />
+        <FadingLine  />
         <HomepageFeatures />
+        <FadingLine  />
         <HomepageContributors />
       </main>
     </Layout>

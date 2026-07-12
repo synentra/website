@@ -79,7 +79,15 @@ Synentra is configured through standard ASP.NET Core `appsettings.json` / enviro
   },
   "Security": {
     "AgentAuth": {
-      "Provider": "SelfSigned"
+      "UseCustomHeader": true,
+      "CustomHeaderName": "Synentra-Authorization",
+      "FallbackToAuthorization": false,
+      "TokenIssuance": {
+        "Secret": "v3ctr@D3v$K3y!2025#Zx9Lq8Rp4Wm6T",
+        "Issuer": "synentra",
+        "Audience": "synentra-agents",
+        "Expiration": "00:15:00"
+      },
     }
   },
   "Policy": {
