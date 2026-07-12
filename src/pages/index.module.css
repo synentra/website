@@ -14,3 +14,17 @@
   align-items: center;
   justify-content: center;
 }
+
+.brand-name {
+  color: var(--ifm-color-primary);
+  font-weight: 850;
+  background: linear-gradient(
+    90deg,
+    var(--brand-primary-dark),
+    var(--brand-primary-light)
+  );
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

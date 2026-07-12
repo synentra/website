@@ -13,12 +13,13 @@ function HomepageHeader() {
     <header className={clsx('hero hero--background')}>
       <div className="container">
         <div className="row">
-          <div className="col col--12 text--left">
-            <Heading as="h3" className="hero-title">
-            Synentra: Intent-Aware Governance Gateway for Autonomous AI Agents
+          <div className="col col--12 text--center">
+            <Heading as="h1" className="hero-title">
+              <span className="brand-name">Synentra</span><br />
+              Intent-Aware Governance Gateway for Autonomous AI Agents
             </Heading>
             <p className="hero-subtitle">{siteConfig.tagline}</p>
-            <div className='{styles.buttons} text--left padding-top--lg'>
+            <div className='{styles.buttons} text--center padding-top--lg'>
               <Link className="button button--quickstart button--lg margin-right--md margin-bottom--md"
                 to="/docs/getting-started">
                 Get started
@@ -26,6 +27,10 @@ function HomepageHeader() {
               <Link className="button hero-button--secondary button--lg margin-right--md margin-bottom--md"
                 to="docs/api-reference">
                 API Reference
+              </Link>
+              <Link className="button hero-button--secondary button--lg margin-right--md margin-bottom--md"
+                to="docs/integrations">
+                Integrations
               </Link>
             </div>
           </div>

@@ -11,8 +11,8 @@
   flex-direction: row;
   justify-content: space-around;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   padding: 1rem 1rem;
   gap: 1rem;
@@ -33,7 +33,8 @@
 
 /* Hover effect: border and subtle shadow */
 .col:hover {
-  border: 2px solid  rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--ifm-color-primary);
+  box-shadow: 0 8px 24px var(--shadow-color);
 }
 
 /* Titles */
@@ -42,7 +43,7 @@
   font-size: 1.4rem;
   font-weight: 800;
   letter-spacing: 0.5px;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 /* Subtitles */
@@ -50,14 +51,14 @@
   margin-top: 0.5rem;
   font-size: 0.8rem;
   font-weight: 500;
-  color: #f0f0f0d8;
+  color: var(--text-secondary);
   opacity: 0.85;
 }
 
 /* Divider */
 .divider {
   height: 10rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 1px solid var(--glass-border);
   margin: 0;
   align-self: stretch;
 }

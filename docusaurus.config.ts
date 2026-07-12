@@ -57,7 +57,7 @@ const config: Config = {
   ],
   themes: ['@docusaurus/theme-mermaid'],
   themeConfig: {
-    image: 'img/banner.jpg',
+    image: 'img/banner.png',
     colorMode: {
       respectPrefersColorScheme: true,
     },
