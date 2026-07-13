@@ -644,17 +644,21 @@ html[data-theme='dark'] {
 }
 
 .tabs-container {
-  margin-bottom: 0 !important;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 2px;
+  padding: 0.5rem;
+}
+
+.install-box .tabs-container {
+  padding: 0.25rem;
+  border: 1px solid var(--border-color) !important;
 }
 
 .tabs {
   margin-bottom: 0 !important;
 }
 
-.margin-top--md {
+.install-box .margin-top--md {
   margin-top: 0 !important;
 }
 

@@ -1,0 +1,146 @@
+---
+id: install-synentra-cli
+title: Install the Synentra CLI
+sidebar_label: Install Synentra CLI
+sidebar_position: 1
+description: For those who prefer automation, scriptability, the Synentra CLI provides a powerful way to install, configure, and manage Synentra with a few simple commands. This method is ideal for DevOps pipelines, infrastructure‑as‑code scenarios, and repeatable deployment patterns.
+---
+
+# Install the Synentra CLI
+
+**Synentra** is the primary command‑line interface (CLI) for managing and operating the Synentra intent‑aware governance gateway. This guide will walk you through the installation process across major operating systems, including support for versioning, non‑administrative installations, and environment setup.
+
+## Prerequisites
+Before installation, ensure the following:
+- A supported shell environment (`bash`, `powershell`, or equivalent).
+- Internet access to download the installation script.
+- (Optional) Write access to the target installation directory (e.g., `/usr/local/bin`, `%ProgramFiles%\Synentra`, or a custom path).
+
+## Step 1: Install the SynCtl
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs groupId="operating-systems">
+  <TabItem value="linux" label="Linux">
+    #### Install from Terminal
+
+    Install the latest Linux **synctl** to `/usr/local/bin`:
+
+    ```
+    wget -q https://get.synentra.io/install.sh -O - | /bin/bash
+    ```
+
+    #### Installing a specific **synctl** version
+
+    The following example shows how to install **synctl** version `1.4.2`.
+    ```
+    wget -q https://get.synentra.io/install.sh -O - | /bin/bash -s 1.4.2
+    ```
+
+    #### Install without sudo
+    If you do not have access to the sudo command or your username is not in the sudoers file, 
+    you can install **synctl** to an alternate directory via the `SYNCTL_INSTALL_DIR` environment variable. 
+    This directory must already exist and be accessible by the current user.
+    ```
+    wget -q https://get.synentra.io/install.sh -O - | SYNCTL_INSTALL_DIR="$HOME/synctl" /bin/bash
+    ```
+
+    #### Installing a specific **synctl** version without sudo
+    The following example shows how to install **synctl** version `1.4.2`.
+    ```
+    wget -q https://get.synentra.io/install.sh -O - | SYNCTL_INSTALL_DIR="$HOME/synctl" /bin/bash -s 1.4.2
+    ```
+  </TabItem>
+  <TabItem value="windows" label="Windows">
+    #### Install from Powershell
+    Install the latest windows **synctl** to $Env:SystemDrive\synctl and add this directory to the User PATH environment variable:
+    ```
+    iwr -useb https://get.synentra.io/install.ps1 | iex
+    ```
+
+    #### Installing a specific **synctl** version
+    The following example shows how to install **synctl** version `1.4.2`.
+    ```
+    $script=iwr -useb https://get.synentra.io/install.ps1; $block=[ScriptBlock]::Create($script); invoke-command -ScriptBlock $block -ArgumentList "1.2.4"
+    ```
+  
+    #### Install without administrative rights
+    If you do not have admin rights, you can install Synentra to an alternate directory via the `SYNCTL_INSTALL_DIR` environment variable. The script below creates the directory if it does not exist.
+    ```
+    $Env:SYNCTL_INSTALL_DIR = "<your_alt_install_dir_path>"
+    $script=iwr -useb https://get.synentra.io/install.ps1; $block=[ScriptBlock]::Create($script); invoke-command -ScriptBlock $block -ArgumentList "", "$Env:SYNCTL_INSTALL_DIR"
+    ```
+  
+    #### Installing a specific synctl version without administrative rights
+    The following example shows how to install **synctl** version `1.4.2`.
+    ```
+    $Env:SYNCTL_INSTALL_DIR = "<your_alt_install_dir_path>"
+    $script=iwr -useb https://get.synentra.io/install.ps1; $block=[ScriptBlock]::Create($script); invoke-command -ScriptBlock $block -ArgumentList "1.2.4", "$Env:SYNCTL_INSTALL_DIR"
+    ```
+  </TabItem>
+  <TabItem value="macos" label="MacOS">
+    #### Install from Terminal
+    Install the latest **synctl** to `/usr/local/bin`:
+    ```
+    curl -fsSL https://get.synentra.io/install.sh | /bin/bash
+    ```
+
+    #### Installing a specific **synctl** version
+    The following example shows how to install **synctl** version `1.4.2`.
+    ```
+    curl -fsSL https://get.synentra.io/install.sh | /bin/bash -s 1.4.2
+    ```
+
+    #### Install without sudo
+    If you do not have access to the sudo command or your username is not in the sudoers file, you can install 
+    **synctl** to an alternate directory via the SYNCTL_INSTALL_DIR environment variable. 
+    This directory must already exist and be accessible by the current user.
+    ```
+    curl -fsSL https://get.synentra.io/install.sh | SYNCTL_INSTALL_DIR="$HOME/synctl" /bin/bash
+    ```
+
+    #### Installing a specific synctl version without sudo
+    The following example shows how to install **synctl** version `1.4.2`.
+    ```
+    curl -fsSL https://get.synentra.io/install.sh | SYNCTL_INSTALL_DIR="$HOME/synctl" /bin/bash -s 1.4.2
+    ```
+  </TabItem>
+</Tabs>
+
+:::info[Register path to the OS Environment Varables]
+In linux-based operating system, if you use the **Install without sudo** option, you must register the **$HOME/synctl** to the PATH of Environment Variables. To do this, you can use below command:
+
+```
+export PATH=$PATH:$HOME/synctl
+```
+:::
+
+## Step 2: Verify the synctl installation
+Verify the CLI is installed by restarting your terminal/command prompt and running the following:
+```
+synctl -h
+```
+#### Output
+```
+Description:
+  SynCtl - CLI tool for Synentra (Intent-Aware Governance Gateway for Autonomous AI Agents)
+
+Usage:
+  synctl [command] [options]
+
+Options:
+  -?, -h, --help  Show help and usage information
+  --version       Show version information
+
+Commands:
+  agents     Manage AI agents registered in Synentra
+  hitl       Manage Human-in-the-Loop (HITL) requests
+  init       Initialize the Synentra gateway (binary or Docker)
+  policies   Browse Synentra governance policies
+  proxy      Forwards an HTTP request to the Synentra gateway
+  run        Start the Synentra gateway (binary or Docker)
+  stop       Stop the running Synentra gateway (binary or Docker)
+  token      Exchange agent credentials for a JWT bearer token
+  uninstall  Remove the Synentra engine (binary or Docker)
+  update     Update the Synentra gateway binary to a newer version
+```

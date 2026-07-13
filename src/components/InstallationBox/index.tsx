@@ -3,6 +3,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 import styles from './index.module.css';
+import Link from '@docusaurus/Link';
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -49,41 +50,35 @@ function CodeBlock({
 }
 
 export default function InstallationBox() {
-  return (
-    <section className={styles.container}>
-      <header className={styles.header}>
-        <h2>Install Synentra</h2>
-      </header>
-      <Tabs groupId="synentra-installation" className={`${styles.tabs} ${styles.tabList}`}>
-        <TabItem value="linux-macos" label={
-            <>Linux / macOS</>
-          }
-          default
-        >
-          <CodeBlock
-            code="curl -fsSL https://get.synentra.io/install.sh | bash"
-            language="bash"
-          />
-        </TabItem>
-        <TabItem value="windows" label={
-            <>Windows</>
-          }
-        >
-          <CodeBlock
-            code="irm https://get.synentra.io/install.ps1 | iex"
-            language="powershell"
-          />
-        </TabItem>
-        <TabItem  value="docker" label={
-            <>Docker</>
-          }
-        >
-          <CodeBlock
-            code="docker run -p 7080:7080 ghcr.io/synentra/synentra:latest"
-            language="bash"
-          />
-        </TabItem>
-      </Tabs>
-    </section>
-  );
-}
+    return (
+      <section className={`${styles.container} install-box`}>
+        <header className={styles.header}>
+          <h2>Install Synentra</h2>
+        </header>
+        <Tabs groupId="synentra-installation" className={`${styles.tabs} ${styles.tabList}`}>
+          <TabItem value="linux-macos" label={<>Synctl (Official CLI)</>} default>
+            <CodeBlock
+              code="synctl init"
+              language="bash"
+            />
+            <div className={styles.docsLink}>
+              <Link to="/docs/getting-started/synctl">
+                Synctl installation guide <span className={styles.arrow}>→</span>
+              </Link>
+            </div>
+          </TabItem>
+          <TabItem value="docker" label={<>Docker (linux)</>}>
+            <CodeBlock
+              code="docker run -p 7080:7080 ghcr.io/synentra/synentra:latest"
+              language="bash"
+            />
+            <div className={styles.docsLink}>
+              <Link to="/docs/getting-started/docker">
+                Docker deployment guide <span className={styles.arrow}>→</span>
+              </Link>
+            </div>
+          </TabItem>
+        </Tabs>
+      </section>
+    );
+  }

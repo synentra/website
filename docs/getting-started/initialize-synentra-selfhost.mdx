@@ -1,0 +1,73 @@
+---
+id: initialize-synentra-selfhost
+title: Initialize Synentra in your local environment
+sidebar_label: Initialize Synentra Localy
+sidebar_position: 2
+description: For those who prefer automation, scriptability, the Synentra CLI provides a powerful way to install, configure, and manage Synentra with a few simple commands. This method is ideal for DevOps pipelines, infrastructure‑as‑code scenarios, and repeatable deployment patterns.
+---
+
+# Initialize Synentra in your local environment
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Now that you’ve installed the Synentra CLI, use the CLI to initialize Synentra on your local machine. This process will download and configure the required Synentra binaries and prepare your system for 
+workflow execution, dashboard hosting, and plugin management.
+
+The **synctl** init command automates the setup by fetching the latest stable Synentra engine and installing 
+it locally under your user context or system-wide depending on permissions.
+
+## Step 1: Open a Terminal or Command Prompt
+<Tabs groupId="operating-systems">
+  <TabItem value="linuxMacOs" label="Linux/MacOS">
+  You will need to use `sudo` for this quickstart if:
+
+  - You run your Docker commands with `sudo`, or
+  - The install path is `/usr/local/bin` (default install path).
+  </TabItem>
+  <TabItem value="windows" label="Windows">
+  Open Windows Terminal or Command Prompt as Administrator to avoid permission issues during installation.
+
+  - Press Start or Windows key.
+  - Search for “Command Prompt” or “Windows Terminal”.
+  - Right-click the result and choose Run as administrator.
+  </TabItem>
+</Tabs>
+
+## Step 2: Run the Initialization Command
+Once the terminal is open with the appropriate permissions, run:
+```
+synctl init
+```
+
+This command performs the following tasks:
+- Downloads the latest stable Synentra gateway.
+- Verifies the integrity of downloaded binaries.
+- Installs Synentra locally for the current user profile.
+- Prepares the necessary directories and configuration files.
+
+#### Binary Integrity Check Failure
+If the binary fails to validate during download, you may see:
+```
+Validating download - Fail!  
+The downloaded data may has been corrupted!
+```
+
+This usually indicates a temporary network or cache issue. To resolve just Re-run the command:
+```
+synctl init
+```
+
+If the issue persists, clear any proxy cache or DNS override that may interfere with GitHub/CDN access.
+
+## Step 4: Verify Synentra Installation
+Once initialization completes successfully, verify that the CLI and runtime are properly set up:
+
+```
+synctl --version
+```
+
+Example Output:
+```
+1.4.2
+```
