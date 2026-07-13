@@ -62,7 +62,7 @@ export default function InstallationBox() {
               language="bash"
             />
             <div className={styles.docsLink}>
-              <Link to="/docs/getting-started/synctl">
+              <Link to="/docs/getting-started/install-synentra-cli">
                 Synctl installation guide <span className={styles.arrow}>→</span>
               </Link>
             </div>
@@ -73,7 +73,7 @@ export default function InstallationBox() {
               language="bash"
             />
             <div className={styles.docsLink}>
-              <Link to="/docs/getting-started/docker">
+              <Link to="/docs/docker">
                 Docker deployment guide <span className={styles.arrow}>→</span>
               </Link>
             </div>
