@@ -7,7 +7,7 @@ sidebar_position: 2
 
 # System Configuration
 
-The `System` section controls the HTTP server (Kestrel), storage backends, rate limiting, and circuit breaker behaviour.
+The System section controls the core runtime behaviour of Synentra, including the HTTP/HTTPS server configuration (Kestrel), database and cache storage backends, request rate limiting, and circuit breaker policies. These settings define how the gateway handles network connections, persists data, manages performance limits, and protects against service failures.
 
 ---
 
@@ -15,30 +15,39 @@ The `System` section controls the HTTP server (Kestrel), storage backends, rate 
 
 Controls the Kestrel web server.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `Http.Port` | `int` | `7080` | HTTP listener port |
-| `Https.Enabled` | `bool` | `false` | Enable HTTPS |
-| `Https.Port` | `int` | `7443` | HTTPS listener port |
-| `Https.Certificate.Path` | `string` | — | Path to PFX/PEM certificate file |
-| `Https.Certificate.Password` | `string` | — | Certificate password (omit for passwordless) |
-| `MaxConcurrentConnections` | `long?` | `null` | Kestrel max concurrent connections (`null` = unlimited) |
-| `MaxConcurrentUpgradedConnections` | `long?` | `null` | Max WebSocket / HTTP/2 upgrade connections |
-| `KeepAliveTimeout` | `TimeSpan?` | `00:02:00` | Connection keep-alive timeout |
-| `RequestHeadersTimeout` | `TimeSpan?` | `00:00:30` | Time allowed to receive request headers |
-| `MaxRequestBodySizeMb` | `int?` | `50` | Maximum request body size in megabytes |
+| Property                           | Type        | Default    | Description                                                                                                                      |
+| ---------------------------------- | ----------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `System.Http.Port`                        | `int`       | `7080`     | Port used by the HTTP listener.                                                                                                  |
+| `System.Https.Enabled`                    | `bool`      | `false`    | Enables the HTTPS listener using the configured TLS certificate.                                                                 |
+| `System.Https.Port`                       | `int`       | `7443`     | Port used by the HTTPS listener.                                                                                                 |
+| `System.Https.Certificate.Path`           | `string`    | —          | Path to the TLS certificate file in PFX or PEM format.                                                                           |
+| `System.Https.Certificate.Password`       | `string`    | —          | Password for the certificate, if required. Leave empty for passwordless certificates.                                            |
+| `System.MaxConcurrentConnections`         | `long`      | `null`     | Maximum number of simultaneous client connections. `null` allows unlimited connections.                                          |
+| `System.MaxConcurrentUpgradedConnections` | `long`      | `null`     | Maximum number of concurrent upgraded connections, such as WebSocket or HTTP/2 connections. `null` allows unlimited connections. |
+| `System.KeepAliveTimeout`                 | `TimeSpan?` | `00:02:00` | Maximum idle time before an inactive keep-alive connection is closed.                                                            |
+| `System.RequestHeadersTimeout`            | `TimeSpan`  | `00:00:30` | Maximum time allowed for a client to send the complete request headers.                                                          |
+| `System.MaxRequestBodySizeMb`             | `int?`      | `50`       | Maximum allowed request body size, in megabytes. Set to `null` to remove the limit.                                              |
 
 ### HTTPS Example
 
 ```json
-"Server": {
-  "Http": { "Port": 7080 },
-  "Https": {
-    "Enabled": true,
-    "Port": 7443,
-    "Certificate": {
-      "Path": "/certs/synentra.pfx",
-      "Password": "s3cr3t"
+{
+  "System": {
+    "Server": {
+      "Http": { "Port": 7080 },
+      "Https": {
+        "Enabled": true,
+        "Port": 7443,
+        "Certificate": {
+          "Path": "/certs/synentra.pfx",
+          "Password": "s3cr3t"
+        }
+      },
+      "MaxConcurrentConnections": 1000,
+      "MaxConcurrentUpgradedConnections": 1000,
+      "KeepAliveTimeout": "00:02:00",
+      "RequestHeadersTimeout": "00:00:30",
+      "MaxRequestBodySizeMb": 50
     }
   }
 }
@@ -54,32 +63,58 @@ HTTP and HTTPS ports **must** be different. Synentra will throw an `InvalidOpera
 
 ### Database
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `DefaultProvider` | `string` | `"Sqlite"` | Active database provider: `"Sqlite"` or `"Postgres"` |
-| `Providers.Sqlite.ConnectionString` | `string` | — | SQLite connection string |
-| `Providers.Postgres.ConnectionString` | `string` | — | PostgreSQL connection string |
+| Property                              | Type     | Default    | Description |
+| ------------------------------------- | -------- | ---------- | ------------|
+| `DefaultProvider`                     | `string` | `"Sqlite"` | Active database provider. Supported values are `Sqlite` and `Postgres`.|
+| `Providers.Sqlite.ConnectionString`   | `string` | —          | Connection string used to connect to the SQLite database. Typically specifies the database file location (for example, **Data Source=synentra.db**).|
+| `Providers.Postgres.ConnectionString` | `string` | —          | Connection string used to connect to a PostgreSQL database, including the host, port, database name, and authentication credentials. |
 
 ```json
-"Database": {
-  "DefaultProvider": "Sqlite",
-  "Providers": {
-    "Sqlite": { "ConnectionString": "Data Source=synentra.db" }
+{
+  "System": {
+    "Database": {
+      "DefaultProvider": "Sqlite",
+      "Providers": {
+        "Sqlite": { "ConnectionString": "Data Source=synentra.db" }
+      }
+    }
   }
 }
 ```
 
 ### Cache
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `DefaultProvider` | `string` | `"Redis"` | Active cache provider: `"Redis"` or `"Memory"` |
-| `Providers.Redis.ConnectionString` | `string` | — | Redis connection string (e.g., `localhost:6379`) |
-| `Providers.Memory` | `object` | `{}` | In-memory cache (no additional properties) |
+| Property                             | Type       | Default      | Description                                                                                                                                                                                |
+| ------------------------------------ | ---------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `DefaultProvider`                    | `string`   | `"Memory"`   | Active cache provider. Supported values are `"Memory"` and `"Redis"`.                                                                                                                      |
+| `Providers.Memory`                   | `object`   | `{}`         | Configuration for the in-memory cache provider.                                                                                                                                            |
+| `Providers.Memory.TimeToLive`        | `TimeSpan` | `1.00:00:00` | Default time-to-live (TTL) for cached entries stored in memory.                                                                                                                            |
+| `Providers.Redis.Endpoint`           | `string`   | —            | Redis server endpoint in the format `host:port` (for example, `localhost:6379`).                                                                                                           |
+| `Providers.Redis.TimeToLive`         | `TimeSpan` | `1.00:00:00` | Default time-to-live (TTL) for cached entries stored in Redis.                                                                                                                             |
+| `Providers.Redis.AbortOnConnectFail` | `bool`     | `false`      | Determines whether initialization fails immediately if the initial connection to Redis cannot be established. When `false`, the client automatically retries connecting in the background. |
+| `Providers.Redis.ConnectRetry`       | `int`      | `5`          | Number of times to retry the initial connection before giving up.                                                                                                                          |
+| `Providers.Redis.ConnectTimeout`     | `TimeSpan` | `00:00:05`   | Maximum time to wait when establishing a connection to the Redis server before the attempt times out.                                                                                      |
+
 
 ```json
-"Cache": {
-  "DefaultProvider": "Memory"
+{
+  "System": {
+    "Cache": {
+      "DefaultProvider": "Memory",
+      "Providers": {
+        "Redis": {
+          "Endpoint": "localhost:6379",
+          "TimeToLive": "1.00:00:00",
+          "AbortOnConnectFail": false,
+          "ConnectRetry": 5,
+          "ConnectTimeout": "00:00:05"
+        },
+        "Memory": {
+          "TimeToLive": "1.00:00:00"
+        }
+      }
+    }
+  }
 }
 ```
 
@@ -89,17 +124,21 @@ HTTP and HTTPS ports **must** be different. Synentra will throw an `InvalidOpera
 
 Per-agent token-bucket rate limiter.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `Enabled` | `bool` | `true` | Enable / disable rate limiting globally |
-| `DefaultRequestsPerMinute` | `int` | `60` | Maximum requests per minute per agent |
+| Property                   | Type   | Default | Description                                                                                                                                             |
+| -------------------------- | ------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Enabled`                  | `bool` | `true`  | Enables or disables rate limiting globally. When disabled, no rate limits are enforced for any agent.                                                   |
+| `DefaultRequestsPerMinute` | `int`  | `60`    | Default maximum number of requests an agent can make per minute. This limit applies unless a different rate limit is configured for the specific agent. |
 
 Agents that exceed the limit receive a `429 Too Many Requests` response with a `Retry-After: 60` header.
 
 ```json
-"RateLimit": {
-  "Enabled": true,
-  "DefaultRequestsPerMinute": 120
+{
+  "System": {
+    "RateLimit": {
+      "Enabled": true,
+      "DefaultRequestsPerMinute": 60
+      }
+  }
 }
 ```
 
@@ -109,20 +148,24 @@ Agents that exceed the limit receive a `429 Too Many Requests` response with a `
 
 Protects upstream services from repeated failures.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `Enabled` | `bool` | `true` | Enable / disable the circuit breaker |
-| `FailureThreshold` | `int` | `5` | Number of failures before the circuit opens |
-| `OpenDurationSeconds` | `int` | `30` | Duration (seconds) the circuit stays open |
-| `SamplingWindowSeconds` | `int` | `60` | Rolling window for counting failures |
+| Property                | Type   | Default | Description                                                                                                                                     |
+| ----------------------- | ------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Enabled`               | `bool` | `true`  | Enables or disables the circuit breaker globally. When disabled, failed requests are not tracked and circuit state transitions are not applied. |
+| `FailureThreshold`      | `int`  | `5`     | Number of consecutive or accumulated failures within the sampling window required before the circuit transitions to the open state.             |
+| `OpenDurationSeconds`   | `int`  | `30`    | Amount of time, in seconds, that the circuit remains open before allowing requests again to test service recovery.                              |
+| `SamplingWindowSeconds` | `int`  | `60`    | Time window, in seconds, used to evaluate failures and determine whether the failure threshold has been reached.                                |
 
 When the circuit is open, requests receive a `503 Service Unavailable` response.
 
 ```json
-"CircuitBreaker": {
-  "Enabled": true,
-  "FailureThreshold": 3,
-  "OpenDurationSeconds": 60,
-  "SamplingWindowSeconds": 120
+{
+  "System": {
+    "CircuitBreaker": {
+      "Enabled": true,
+      "FailureThreshold": 3,
+      "OpenDurationSeconds": 30,
+      "SamplingWindowSeconds": 60
+    }
+  }
 }
 ```

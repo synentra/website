@@ -57,8 +57,16 @@ Synentra uses the standard **ASP.NET Core configuration system** (`appsettings.j
       "Cache": {
         "DefaultProvider": "Memory",
         "Providers": {
-          "Redis": { "ConnectionString": "" },
-          "Memory": {}
+          "Redis": {
+            "Endpoint": "localhost:6379",
+            "TimeToLive": "1.00:00:00",
+            "AbortOnConnectFail": false,
+            "ConnectRetry": 5,
+            "ConnectTimeout": "00:00:05"
+          },
+          "Memory": {
+            "TimeToLive": "1.00:00:00"
+          }
         }
       }
     },
@@ -75,17 +83,30 @@ Synentra uses the standard **ASP.NET Core configuration system** (`appsettings.j
   },
   "Security": {
     "AgentAuth": {
-      "Provider": "SelfSigned",
-      "SelfSigned": {},
-      "Jwt": {
-        "Issuer": "",
-        "Audience": "",
-        "SecretKey": ""
+      "UseCustomHeader": true,
+      "CustomHeaderName": "Synentra-Authorization",
+      "FallbackToAuthorization": false,
+      "TokenIssuance": {
+        "Secret": "v3ctr@D3v$K3y!2025#Zx9Lq8Rp4Wm6T",
+        "Issuer": "synentra",
+        "Audience": "synentra-agents",
+        "Expiration": "00:15:00"
+      },
+      "ExternalIdentity": {
+        "Enabled": false,
+        "Provider": "Jwt",
+        "Jwt": {
+          "Authority": "<your-authority>",
+          "Audience": "<your-audience>",
+          "MetadataUrl": "<your-metadata-url>",
+          "ValidateIssuer": false,
+          "ValidateAudience": false
+        }
+      },
+      "AgentQuarantine": {
+        "Enabled": true,
+        "TrustScoreFloor": 0.3
       }
-    },
-    "AgentQuarantine": {
-      "Enabled": true,
-      "TrustScoreFloor": 0.3
     }
   },
   "Policy": {
@@ -106,7 +127,7 @@ Synentra uses the standard **ASP.NET Core configuration system** (`appsettings.j
     "AllowLowConfidence": false,
     "DefaultProvider": "Internal",
     "Providers": {
-      "Internal": {},
+      "Internal": { "ModelType": "Community", "PackagePath": "models/community-model.zip" },
       "OpenAi": { "ApiKey": "", "Model": "gpt-4o" },
       "AzureAi": { "Endpoint": "", "ApiKey": "", "DeploymentName": "" },
       "Gemini": { "ApiKey": "", "Model": "" },
@@ -140,16 +161,28 @@ Synentra uses the standard **ASP.NET Core configuration system** (`appsettings.j
   },
   "Observability": {
     "Logging": {
-      "DefaultLogLevel": "Information",
       "File": {
         "Enabled": true,
-        "Path": "./logs/synentra-.log"
+        "LogPath": "logs/log-.txt",
+        "RollingInterval": "Day",
+        "LogLevel": "Warning",
+        "RetainedFileCountLimit": 7
       },
       "Seq": {
         "Enabled": false,
-        "ServerUrl": "http://localhost:5341",
-        "ApiKey": ""
+        "Url": "http://localhost:5341",
+        "ApiKey": "",
+        "LogLevel": "Information"
+      },
+      "Otlp": {
+        "Enabled": false,
+        "Endpoint": "http://localhost:4317",
+        "LogLevel": "Information"
       }
+    },
+    "OpenTelemetry": {
+      "Enabled": false,
+      "Endpoint": "http://localhost:4317"
     }
   },
   "SecretManagement": {
