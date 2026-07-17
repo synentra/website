@@ -7,7 +7,12 @@ sidebar_position: 4
 
 # Policy Configuration
 
-The `Policy` section controls how Synentra evaluates request policies.
+The `Policy` section controls how Synentra evaluates authorization policies.
+
+Synentra supports multiple policy providers. The active provider is selected using `DefaultProvider`:
+
+- **Internal** — Loads policy definitions from local JSON files and evaluates them in-process.
+- **Opa** — Delegates policy decisions to an external Open Policy Agent (OPA) server.
 
 ---
 
@@ -16,35 +21,141 @@ The `Policy` section controls how Synentra evaluates request policies.
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `Enabled` | `bool?` | `true` | Enable or disable policy evaluation globally |
-| `DefaultProvider` | `string` | `"Internal"` | Active policy provider: `"Internal"` or `"Opa"` |
-| `Providers.Internal.Directory` | `string` | — | Directory path containing JSON policy files |
-| `Providers.Opa.BaseUrl` | `string` | — | Base URL of your OPA server |
-| `Providers.Opa.Path` | `string` | `"/v1/data/synentra/authz"` | OPA decision path |
-| `Providers.Opa.Timeout` | `TimeSpan?` | `00:00:05` | OPA HTTP request timeout |
+| `DefaultProvider` | `string` | `"Internal"` | Active policy provider. Supported values: `"Internal"` or `"Opa"` |
+| `Providers.Internal.Directory` | `string` | `""` | Directory containing internal JSON policy definitions |
+| `Providers.Opa.BaseUrl` | `string` | `""` | Base URL of the OPA server |
+| `Providers.Opa.Path` | `string` | `"/v1/data/synentra/authz"` | OPA decision API path |
+| `Providers.Opa.Timeout` | `TimeSpan?` | `00:00:05` | Timeout for OPA HTTP requests |
 
----
-
-## Internal Provider
-
-The **Internal** provider loads JSON policy definitions from the local filesystem using `FileSystemPolicyLoader`. Policies are cached in memory via `PolicyCacheService`.
+## Configuration Example
 
 ```json
 "Policy": {
   "Enabled": true,
   "DefaultProvider": "Internal",
   "Providers": {
-    "Internal": { "Directory": "./policies" }
+    "Internal": {
+      "Directory": "./policies"
+    },
+    "Opa": {
+      "BaseUrl": "http://localhost:8181",
+      "Path": "/v1/data/synentra/authz",
+      "Timeout": "00:00:05"
+    }
   }
 }
 ```
 
-Policy files must be placed in the configured directory and named `<policy-name>.json`. See [Policies](../../reference/synentra-api/policies/overview) for the file format.
+---
+
+## Internal Provider
+
+The **Internal** provider evaluates policies locally inside Synentra.
+
+Policies are loaded from JSON files using `FileSystemPolicyLoader`.
+
+### Policy Directory
+
+The configured directory can be either:
+
+- An absolute path.
+- A relative path resolved from the Synentra application directory.
+
+Example:
+
+```json
+"Internal": {
+  "Directory": "./policies"
+}
+```
+
+Each policy file must:
+
+- Have a .json extension.
+- Contain a valid PolicyDefinition.
+- Define a unique policy Name.
+
+Example directory:
+
+```
+policies/
+ ├── customer-api.json
+ ├── payment-service.json
+ └── admin-access.json
+```
+
+Policies are loaded automatically when required and cached in memory through the policy cache service.
+
+---
+
+### Policy Evaluation
+
+Internal policy evaluation follows these steps:
+
+1. Load the requested policy.
+2. Evaluate rules ordered by descending Priority.
+3. Evaluate all conditions inside a rule.
+4. Return the rule effect when all conditions match.
+5. If no rule matches, return the policy default effect.
+
+Supported policy effects:
+
+| Effect  | Description                     |
+| ------- | ------------------------------- |
+| `Allow` | Request is permitted            |
+| `Deny`  | Request is rejected             |
+| `Hitl`  | Request requires human approval |
+
+Example rule flow:
+
+```
+Policy
+ ├── Rule (Priority: 100)
+ │    ├── Condition 1
+ │    ├── Condition 2
+ │    └── Effect: Allow
+ │
+ ├── Rule (Priority: 50)
+ │    └── Effect: Hitl
+ │
+ └── Default: Deny
+ ```
+
+---
+
+### Supported Condition Operators
+
+The internal evaluator supports the following operators:
+
+| Operator     | Description                         |
+| ------------ | ----------------------------------- |
+| `eq`         | Equal comparison                    |
+| `ne`         | Not equal comparison                |
+| `gt`         | Greater than                        |
+| `lt`         | Less than                           |
+| `ge`         | Greater than or equal               |
+| `le`         | Less than or equal                  |
+| `in`         | Value exists in collection          |
+| `contains`   | String or collection contains value |
+| `startswith` | String prefix match                 |
+| `endswith`   | String suffix match                 |
+| `regex`      | Regular expression match            |
+
+Conditions support nested input properties:
+
+```json
+{
+  "field": "agent.trustScore",
+  "operator": "ge",
+  "value": 80
+}
+```
 
 ---
 
 ## OPA Provider
 
-The **OPA** provider delegates evaluation to an external [Open Policy Agent](https://www.openpolicyagent.org/) server.
+The **OPA** provider delegates policy evaluation to an external [Open Policy Agent](https://www.openpolicyagent.org/) service.
 
 ```json
 "Policy": {
@@ -60,14 +171,150 @@ The **OPA** provider delegates evaluation to an external [Open Policy Agent](htt
 }
 ```
 
-Synentra posts a JSON input document to OPA containing the full `RequestContext` (agent ID, method, path, headers, body, trust score, policy name) and reads the `allow`, `deny`, and `hitl` decisions from the response.
+Synentra sends the evaluation input to OPA:
+
+```json
+{
+  "input": {
+    "agentId": "agent-123",
+    "method": "POST",
+    "path": "/api/payment",
+    "policyName": "payment-policy"
+  }
+}
+```
+
+The configured OPA endpoint is called using:
+
+```
+POST {BaseUrl}{Path}
+```
+
+Example:
+
+```
+POST http://localhost:8181/v1/data/synentra/authz
+```
 
 ---
 
+### OPA Response Format
+
+OPA responses can return multiple formats.
+
+#### Boolean Response
+
+Allow:
+
+```json
+{
+  "result": true
+}
+```
+
+Deny:
+
+```json
+{
+  "result": false
+}
+```
+
+---
+
+### Effect Response
+
+OPA can return an explicit decision:
+
+```json
+{
+  "result": {
+    "effect": "hitl",
+    "reason": "Additional approval required"
+  }
+}
+```
+
+Supported effects:
+
+| Effect          | Result                 |
+| --------------- | ---------------------- |
+| `allow`         | Allow request          |
+| `hitl`          | Require human approval |
+| Any other value | Deny request           |
+
+---
+
+### Extended Response
+
+OPA may also return:
+
+```json
+{
+  "result": {
+    "allow": true,
+    "reason": "Trusted agent"
+  }
+}
+```
+
+or:
+
+```json
+{
+  "result": {
+    "hitl": true,
+    "reason": "Sensitive operation"
+  }
+}
+```
+
+---
+
+## Policy Cache
+
+Synentra caches loaded policies to avoid reading policy files or querying providers repeatedly.
+
+Cached data includes:
+
+- Loaded internal policy definitions.
+- Evaluated policy lookup data.
+
+When the cache does not contain policies, Synentra reloads them using the configured policy loader.
+
 ## Disabling Policy Evaluation
 
-Set `Enabled: false` to skip policy evaluation entirely. Risk scoring and semantic analysis (if enabled) still run.
+Set `Enabled` to `false` to disable policy evaluation globally.
 
 ```json
 "Policy": { "Enabled": false }
 ```
+
+When disabled:
+
+- Policy evaluation is skipped.
+- Other request processing features continue to execute normally.
+
+---
+
+## Provider Selection
+
+The active provider is controlled by `DefaultProvider`.
+
+Internal evaluation:
+
+```json
+{
+  "DefaultProvider": "Internal"
+}
+```
+
+OPA evaluation:
+
+```json
+{
+  "DefaultProvider": "Opa"
+}
+```
+
+If OPA is selected but no `BaseUrl` is configured, Synentra denies the request and logs the configuration issue.

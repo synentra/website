@@ -7,7 +7,26 @@ sidebar_position: 6
 
 # Human-in-the-Loop Configuration
 
-The `HumanInTheLoop` section controls when and how Synentra intercepts requests for manual operator review.
+The `HumanInTheLoop` section configures Synentra's Human-in-the-Loop (HITL) workflow.
+
+When enabled, requests that exceed the configured risk threshold are suspended instead of being forwarded immediately to the upstream service. Operators can then review, approve, or deny the request through the HITL API.
+
+---
+
+## Configuration hierarchy
+
+```text
+HumanInTheLoop
+├── Enabled
+├── Threshold
+├── TimeoutSeconds
+├── MaxPendingRequests
+└── Notifications
+    ├── Slack
+    ├── Teams
+    ├── PagerDuty
+    └── GenericWebhook
+```
 
 ---
 
@@ -15,96 +34,142 @@ The `HumanInTheLoop` section controls when and how Synentra intercepts requests 
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `Enabled` | `bool?` | `true` | Enable / disable the HITL interception system |
-| `Threshold` | `double?` | `0.8` | Risk score threshold (0–1). Requests with a score above this are intercepted |
-| `TimeoutSeconds` | `int` | `3600` | How long (in seconds) a suspended request remains reviewable before auto-expiry |
-| `MaxPendingRequests` | `int` | `100` | Maximum number of concurrently pending HITL requests. `0` = unlimited |
-| `Notifications` | `object` | `{}` | Notification channel configuration. Each channel has an `Enabled` flag and channel-specific settings |
+| `Enabled` | `bool?` | `true` | Enables or disables the Human-in-the-Loop system globally |
+| `Threshold` | `double?` | `0.8` | Risk score (0–1) above which requests require manual approval |
+| `TimeoutSeconds` | `int` | `3600` | Time (seconds) before a pending HITL request automatically expires |
+| `MaxPendingRequests` | `int` | `100` | Maximum number of pending HITL requests. `0` means unlimited |
+| `Notifications` | `object` | `{}` | Notification channel configuration |
 
 ---
 
 ## Notifications
 
-When a request is suspended for HITL review, Synentra can notify external systems (Slack, Teams, PagerDuty, or a generic webhook).
+The `Notifications` object configures one or more external systems that should be notified whenever a request enters Human-in-the-Loop review.
 
-- Multiple channels can be enabled at the same time.
-- Notifications are best-effort: if one channel fails, the HITL request is still created and other channels can still succeed.
+Multiple notification channels may be enabled simultaneously.
 
-### Slack
+Notification delivery is **best-effort**:
+
+- Failure to deliver one notification does **not** prevent the HITL request from being created.
+- Other notification channels are still attempted.
+- Operators can always retrieve pending requests through the HITL API.
+
+---
+
+## Slack
+
+Sends notifications using a Slack Incoming Webhook.
+
+### Properties
 
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `Enabled` | `bool` | `false` | Enable Slack notifications |
-| `WebhookUrl` | `string?` | `null` | Slack incoming webhook URL |
-| `Channel` | `string?` | `null` | Optional channel override (overrides the webhook default) |
-| `Username` | `string?` | `Synentra HITL` | Optional bot username |
-| `IconEmoji` | `string?` | `:robot_face:` | Optional bot icon emoji |
+| `WebhookUrl` | `string?` | `null` | Slack Incoming Webhook URL |
+| `Channel` | `string?` | `null` | Optional channel override |
+| `Username` | `string?` | `"Synentra HITL"` | Bot display name |
+| `IconEmoji` | `string?` | `":robot_face:"` | Bot icon emoji |
 
-Slack messages include the HITL request id, agent id, method, URL, reason, expiry window, and timestamp.
+### Notification contents
 
-### Microsoft Teams
+Slack notifications include:
+
+- HITL request ID
+- Agent ID
+- HTTP method
+- Request URL
+- Risk reason
+- Expiration time
+- Timestamp
+
+---
+
+## Microsoft Teams
+
+Sends notifications through a Microsoft Teams Incoming Webhook.
+
+### Properties
 
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `Enabled` | `bool` | `false` | Enable Teams notifications |
-| `WebhookUrl` | `string?` | `null` | Teams incoming webhook connector URL |
-| `ThemeColor` | `string?` | `0076D7` | Optional card theme color (hex format) |
+| `WebhookUrl` | `string?` | `null` | Teams Incoming Webhook URL |
+| `ThemeColor` | `string?` | `"0076D7"` | Card accent color (hex) |
 
-Teams notifications are sent using the legacy MessageCard format and include the same HITL request details as Slack.
+### Notification contents
 
-### PagerDuty
+Teams notifications contain the same information as Slack notifications and are sent using the legacy MessageCard format.
+
+---
+
+## PagerDuty
+
+Creates incidents using the PagerDuty Events API v2.
+
+### Properties
 
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `Enabled` | `bool` | `false` | Enable PagerDuty notifications |
-| `RoutingKey` | `string?` | `null` | PagerDuty Events API v2 integration key (routing key) |
-| `ApiUrl` | `string` | `https://events.pagerduty.com/v2/enqueue` | PagerDuty Events API v2 URL |
-| `Severity` | `string` | `warning` | PagerDuty severity (for example: `info`, `warning`, `error`, `critical`) |
+| `RoutingKey` | `string?` | `null` | PagerDuty Events API v2 integration (routing) key |
+| `ApiUrl` | `string` | `"https://events.pagerduty.com/v2/enqueue"` | PagerDuty Events API endpoint |
+| `Severity` | `string` | `"warning"` | Alert severity (`info`, `warning`, `error`, `critical`) |
 
-PagerDuty notifications are sent via Events API v2 and include HITL details under `payload.custom_details`.
+### Notification contents
 
-### Generic webhook
+The HITL request information is included under `payload.custom_details`.
+
+---
+
+## Generic webhook
+
+Sends a JSON payload to any HTTP endpoint.
+
+### Properties
 
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `Enabled` | `bool` | `false` | Enable generic webhook notifications |
-| `WebhookUrl` | `string?` | `null` | Webhook URL to `POST` to |
-| `Headers` | `Dictionary<string,string>?` | `null` | Optional headers to include in the request |
+| `WebhookUrl` | `string?` | `null` | Endpoint that receives a `POST` request |
+| `Headers` | `Dictionary<string,string>?` | `null` | Optional HTTP headers included with the request |
+
+The webhook receives a JSON document describing the suspended request.
 
 ---
 
 ## Example
 
 ```json
-"HumanInTheLoop": {
-  "Enabled": true,
-  "Threshold": 0.75,
-  "TimeoutSeconds": 7200,
-  "MaxPendingRequests": 50,
-  "Notifications": {
-    "Slack": {
-      "Enabled": true,
-      "WebhookUrl": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
-      "Channel": "#security-reviews",
-      "Username": "Synentra HITL Bot",
-      "IconEmoji": ":shield:"
-    },
-    "Teams": {
-      "Enabled": true,
-      "WebhookUrl": "https://outlook.office.com/webhook/YOUR-WEBHOOK-URL",
-      "ThemeColor": "FF0000"
-    },
-    "PagerDuty": {
-      "Enabled": true,
-      "RoutingKey": "your-integration-key-here",
-      "ApiUrl": "https://events.pagerduty.com/v2/enqueue",
-      "Severity": "warning"
-    },
-    "GenericWebhook": {
-      "Enabled": true,
-      "WebhookUrl": "https://hooks.example.com/synentra-hitl",
-      "Headers": {
-      "X-Synentra-Token": "your-shared-secret"
+{
+  "HumanInTheLoop": {
+    "Enabled": true,
+    "Threshold": 0.75,
+    "TimeoutSeconds": 7200,
+    "MaxPendingRequests": 50,
+    "Notifications": {
+      "Slack": {
+        "Enabled": true,
+        "WebhookUrl": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+        "Channel": "#security-reviews",
+        "Username": "Synentra HITL Bot",
+        "IconEmoji": ":shield:"
+      },
+      "Teams": {
+        "Enabled": true,
+        "WebhookUrl": "https://outlook.office.com/webhook/YOUR-WEBHOOK-URL",
+        "ThemeColor": "FF0000"
+      },
+      "PagerDuty": {
+        "Enabled": true,
+        "RoutingKey": "your-routing-key",
+        "Severity": "warning"
+      },
+      "GenericWebhook": {
+        "Enabled": true,
+        "WebhookUrl": "https://hooks.example.com/synentra-hitl",
+        "Headers": {
+          "X-Synentra-Token": "your-shared-secret"
+        }
       }
     }
   }
@@ -113,23 +178,32 @@ PagerDuty notifications are sent via Events API v2 and include HITL details unde
 
 ---
 
-## How It Works
+## Human-in-the-Loop workflow
 
-1. The `DecisionEngine` computes a risk score for every proxied request.
-2. If the score exceeds `Threshold`, the engine returns a `Hitl`.
-3. `Hitl Service` stores the full request in the cache with a TTL of `TimeoutSeconds`.
-4. The gateway responds with `202 Accepted` and a `Location` header pointing to `/hitl/{id}`.
-5. An operator polls `/hitl/{id}` or is notified via one or more configured notification channels.
-6. The operator calls `POST /hitl/{id}/approve` or `POST /hitl/{id}/deny`.
-7. On approval, `Hitl Service` re-executes the original request against the upstream.
+When the Decision Engine determines that a request exceeds the configured risk threshold, Synentra suspends the request instead of immediately forwarding it to the upstream service.
 
-See [Human-in-the-Loop](../../reference/synentra-api/hitl) for the full operator workflow.
+The workflow is as follows:
+
+1. The `DecisionEngine` evaluates the request.
+2. A risk score is computed.
+3. If the score exceeds `Threshold`, the engine returns a `Hitl` decision.
+4. The `HitlService` stores the complete request in the configured cache with a TTL equal to `TimeoutSeconds`.
+5. Synentra responds with **HTTP 202 Accepted** and returns a `Location` header pointing to `/hitl/{id}`.
+6. Configured notification channels are invoked.
+7. An operator reviews the request.
+8. The operator calls either:
+   - `POST /hitl/{id}/approve`
+   - `POST /hitl/{id}/deny`
+9. If approved, Synentra replays the original request against the upstream service.
+10. If denied or expired, the request is discarded.
+
+For the complete operator API, see [Human-in-the-Loop](../../reference/synentra-api/hitl).
 
 ---
 
 ## Generic webhook payload
 
-When `HumanInTheLoop:Notifications:GenericWebhook` is enabled and `WebhookUrl` is configured, Synentra sends a `POST` request with a JSON body:
+When Generic Webhook notifications are enabled, Synentra sends an HTTP `POST` request with a JSON payload similar to the following:
 
 ```json
 {
@@ -142,3 +216,13 @@ When `HumanInTheLoop:Notifications:GenericWebhook` is enabled and `WebhookUrl` i
   "expiresAt": "2025-01-01T14:00:00Z"
 }
 ```
+
+---
+
+## Operational considerations
+
+- Choose a `Threshold` that balances security and operational overhead. Lower values increase the number of requests requiring manual review.
+- Configure at least one notification channel in production to ensure operators are alerted promptly.
+- `TimeoutSeconds` should be long enough for operators to review requests but short enough to prevent stale approvals.
+- Setting `MaxPendingRequests` to `0` removes the limit on pending requests. Consider monitoring storage usage if this option is used.
+- Notification failures do not block request suspension or prevent operators from retrieving pending requests through the HITL API.

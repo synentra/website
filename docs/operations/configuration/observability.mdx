@@ -7,36 +7,49 @@ sidebar_position: 7
 
 # Observability Configuration
 
-The `Observability` section configures structured logging sinks for Synentra.
+The `Observability` section configures logging and telemetry for Synentra.
+
+It provides:
+
+- Structured logging
+- Rolling file logs
+- Seq integration for centralized log analysis
+- OpenTelemetry (OTLP) log export
+- OpenTelemetry telemetry export for traces and metrics
 
 ---
 
-## Logging
+## Configuration Structure
 
-**Class:** `LoggingConfiguration`
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `DefaultLogLevel` | `string` | `"Information"` | Minimum log level: `Verbose`, `Debug`, `Information`, `Warning`, `Error`, `Fatal` |
-| `File` | `FileLoggingConfiguration` | — | Rolling file sink |
-| `Seq` | `SeqLoggingConfiguration` | — | [Seq](https://datalust.co/seq) structured log server |
+```text
+Observability
+├── Logging
+│   ├── File
+│   ├── Seq
+│   └── Otlp
+└── OpenTelemetry
+```
 
 ---
 
-## File Sink
+# Logging
+
+The `Logging` section controls all structured logging sinks.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `Enabled` | `bool` | `true` | Enable file logging |
-| `LogPath` | `string` | `./logs/synentra-.log` | Log file path (supports Serilog rolling tokens like `-{Date}`) |
+| `DefaultLogLevel` | `string` | `"Information"` | Default minimum log level for all sinks unless overridden. Supported values: `Verbose`, `Debug`, `Information`, `Warning`, `Error`, `Fatal`. |
+| `File` | `FileLogging` | Enabled | Rolling file logging configuration |
+| `Seq` | `SeqLogging` | Disabled | Configuration for the Seq structured log server |
+| `Otlp` | `OtlpLogging` | Disabled | Exports logs using the OpenTelemetry Protocol (OTLP) |
+
+Example:
 
 ```json
-"Observability": {
-  "Logging": {
-    "DefaultLogLevel": "Information",
-    "File": {
-      "Enabled": true,
-      "LogPath": "./logs/synentra-.log"
+{
+  "Observability": {
+    "Logging": {
+      "DefaultLogLevel": "Information"
     }
   }
 }
@@ -44,23 +57,67 @@ The `Observability` section configures structured logging sinks for Synentra.
 
 ---
 
-## Seq Sink
+# File Sink
 
-[Seq](https://datalust.co/seq) provides a searchable, real-time structured log server.
+**Type:** `FileLogging`
+
+The file sink writes structured logs to rolling log files on disk.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `true` | Enable or disable file logging |
+| `LogLevel` | `string` | `"Information"` | Minimum log level for this sink |
+| `LogPath` | `string` | `logs/log-.txt` | Log file path. Supports Serilog rolling filename patterns (`log-.txt`). |
+| `RollingInterval` | `string` | `"Day"` | Rolling interval. Typical values: `Infinite`, `Year`, `Month`, `Day`, `Hour`, `Minute`. |
+| `RetainedFileCountLimit` | `int` | `7` | Maximum number of log files to retain |
+
+Example:
+
+```json
+{
+  "Observability": {
+    "Logging": {
+      "File": {
+        "Enabled": true,
+        "LogLevel": "Information",
+        "LogPath": "logs/log-.txt",
+        "RollingInterval": "Day",
+        "RetainedFileCountLimit": 7
+      }
+    }
+  }
+}
+```
+
+---
+
+# Seq Sink
+
+**Type:** `SeqLogging`
+
+The Seq sink sends structured log events to a Seq server for centralized querying and analysis.
+
+Useful during development and production for searching requests, filtering by properties, and correlating events.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `Enabled` | `bool` | `false` | Enable Seq logging |
-| `Url`     | `string` | `http://localhost:5341` | Seq server URL |
-| `ApiKey`  | `string` | — | Seq API key (if authentication is enabled) |
+| `LogLevel` | `string` | `"Information"` | Minimum log level sent to Seq |
+| `Url` | `string` | — | URL of the Seq server |
+| `ApiKey` | `string` | — | Optional API key if Seq authentication is enabled |
+
+Example:
 
 ```json
-"Observability": {
-  "Logging": {
-    "Seq": {
-      "Enabled": true,
-      "Url": "http://seq:5341",
-      "ApiKey": "your-seq-api-key"
+{
+  "Observability": {
+    "Logging": {
+      "Seq": {
+        "Enabled": true,
+        "LogLevel": "Information",
+        "Url": "http://seq:5341",
+        "ApiKey": "your-api-key"
+      }
     }
   }
 }
@@ -68,16 +125,142 @@ The `Observability` section configures structured logging sinks for Synentra.
 
 ---
 
-## Structured Log Events
+# OTLP Log Export
 
-Synentra emits structured log events at key points in the pipeline:
+**Type:** `OtlpLogging`
 
-| Event | Level | Description |
+The OTLP sink exports logs using the OpenTelemetry Protocol.
+
+This allows Synentra logs to be collected by systems such as:
+
+- OpenTelemetry Collector
+- Grafana Alloy
+- Grafana Loki
+- Jaeger
+- Honeycomb
+- Azure Monitor
+- Datadog
+- New Relic
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `false` | Enable OTLP log export |
+| `Endpoint` | `string` | — | OTLP endpoint (typically gRPC on port `4317` or HTTP on port `4318`) |
+| `LogLevel` | `string` | `"Information"` | Minimum log level exported through OTLP |
+
+Example:
+
+```json
+{
+  "Observability": {
+    "Logging": {
+      "Otlp": {
+        "Enabled": true,
+        "Endpoint": "http://otel-collector:4317",
+        "LogLevel": "Information"
+      }
+    }
+  }
+}
+```
+
+---
+
+# OpenTelemetry
+
+The `OpenTelemetry` section enables exporting traces and metrics generated by Synentra.
+
+When enabled, Synentra emits OpenTelemetry telemetry that can be collected by an OpenTelemetry Collector or any OTLP-compatible backend.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `false` | Enable OpenTelemetry instrumentation |
+| `Endpoint` | `string` | — | OTLP endpoint used for traces and metrics |
+
+Example:
+
+```json
+{
+  "Observability": {
+    "OpenTelemetry": {
+      "Enabled": true,
+      "Endpoint": "http://otel-collector:4317"
+    }
+  }
+}
+```
+
+---
+
+# Complete Example
+
+```json
+{
+  "Observability": {
+    "Logging": {
+      "DefaultLogLevel": "Information",
+      "File": {
+        "Enabled": true,
+        "LogLevel": "Information",
+        "LogPath": "logs/log-.txt",
+        "RollingInterval": "Day",
+        "RetainedFileCountLimit": 7
+      },
+      "Seq": {
+        "Enabled": true,
+        "LogLevel": "Information",
+        "Url": "http://seq:5341",
+        "ApiKey": "your-api-key"
+      },
+      "Otlp": {
+        "Enabled": false,
+        "LogLevel": "Information",
+        "Endpoint": "http://otel-collector:4317"
+      }
+    },
+    "OpenTelemetry": {
+      "Enabled": true,
+      "Endpoint": "http://otel-collector:4317"
+    }
+  }
+}
+```
+
+---
+
+# Structured Log Events
+
+Synentra emits structured log events throughout the request pipeline.
+
+| Event | Typical Level | Description |
 |---|---|---|
-| Agent authenticated | `Debug` | Successful JWT validation |
-| Rate limit exceeded | `Warning` | Agent exceeded requests/min |
-| Circuit breaker open | `Warning` | Upstream is temporarily unavailable |
+| Application startup | `Information` | Synentra initialization |
+| Agent authenticated | `Debug` | Successful agent authentication |
+| Authentication failed | `Warning` | Invalid or expired credentials |
+| Policy evaluation | `Debug` | Policy engine execution |
 | Policy denied | `Information` | Request blocked by policy |
-| HITL suspended | `Information` | Request held for human review |
-| Risk score computed | `Debug` | Per-request risk score |
-| Startup failure | `Critical` | Unhandled exception during startup |
+| Semantic analysis | `Debug` | Intent classification completed |
+| Risk score computed | `Debug` | Final request risk score |
+| Human review requested | `Information` | Request suspended for HITL |
+| Rate limit exceeded | `Warning` | Rate limiter rejected the request |
+| Circuit breaker opened | `Warning` | Upstream temporarily unavailable |
+| Upstream request completed | `Debug` | Request successfully proxied |
+| Unhandled exception | `Error` | Unexpected runtime exception |
+| Startup failure | `Fatal` | Application failed during startup |
+
+---
+
+# Log Levels
+
+Synentra uses the standard Serilog log levels.
+
+| Level | Description |
+|---|---|
+| `Verbose` | Extremely detailed diagnostic information |
+| `Debug` | Useful during development and troubleshooting |
+| `Information` | Normal application events |
+| `Warning` | Recoverable problems or unexpected conditions |
+| `Error` | Failed operations that affect the current request |
+| `Fatal` | Critical failures causing application termination |
+
+Sink-specific log levels override the global `DefaultLogLevel` when configured.
