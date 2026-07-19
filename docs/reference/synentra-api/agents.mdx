@@ -1,49 +1,72 @@
 ---
-id: agents
-title: Agents
-sidebar_label: Agents
-sidebar_position: 6
+id: agents-api
+title: "Agents API reference"
+sidebar_label: Agents API
+sidebar_position: 2
 ---
 
-# Agents
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 An **Agent** is the core identity unit in Synentra. Every autonomous AI agent, service, or system that proxies requests through Synentra must be registered as an agent. Each agent has a unique identity, a trust score, an assigned policy, and a lifecycle status.
 
----
-
-## Domain Model
-
-| Property | Type | Description |
-|---|---|---|
-| `Id` | `Guid` | Unique identifier (auto-generated) |
-| `Name` | `string` | Human-readable agent name |
-| `OwnerId` | `string?` | Identifier of the agent owner/team |
-| `Status` | `AgentStatus` | `Active` or `Revoked` |
-| `PolicyName` | `string?` | Name of the assigned policy |
-| `ClientSecretHash` | `string` | Bcrypt hash of the agent's client secret |
-| `TrustScore` | `double` | Current trust score (0.0 – 1.0). Default: `0.5` |
-| `AgentHistories` | `ICollection<AgentHistory>` | Time-series history of recent requests |
-
-### AgentStatus
-
-| Value | Description |
-|---|---|
-| `Active` | Agent can proxy requests |
-| `Revoked` | Agent is blocked. All requests return `403 Forbidden` |
+:::tip Base URL
+Throughout this guide the base URL is assumed to be your running server, e.g. `http://localhost:7080`.
+Replace `<BASE_URL>` in the examples with your actual server address.
+:::
 
 ---
 
 ## API Endpoints
 
-Base path: `/agents`
-
-### List Agents
-
-```http
-GET /agents?page=1&pageSize=25
-```
+### Get agents list
 
 Returns a paginated list of all registered agents.
+
+```http
+GET <BASE_URL>/agents?page=1&pageSize=25
+```
+
+#### URL Parameters
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `page` | `int` | `1` | Page number |
+| `pageSize` | `int` | `25` | Items per page |
+
+#### Examples
+
+Example of invoking a method on an action:
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl "http://localhost:7080/agents?page=1&pageSize=25"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`http://localhost:7080/agents?page=1&pageSize=25`)
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.get(
+    f'http://localhost:7080/agents',
+    params={'page': 1, 'pageSize': 25}
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
 
 **Response** `200 OK`
 
@@ -67,14 +90,15 @@ Returns a paginated list of all registered agents.
 
 ---
 
-### Register Agent
+### Register an agent
 
 ```http
-POST /agents
-Content-Type: application/json
+POST <BASE_URL>/agents
 ```
 
-**Request Body:**
+#### Request body
+
+A JSON object with the following fields:
 
 ```json
 {
@@ -90,30 +114,75 @@ Content-Type: application/json
 | `ownerId` | ✅ | Owner identifier |
 | `clientSecret` | ✅ | Secret used to obtain JWT tokens |
 
-**Response** `201 Created`
-
-```json
-{
-  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "name": "billing-agent",
-  "clientSecret": "my-strong-secret"
-}
-```
-
 :::warning
 The `clientSecret` is only returned once. Store it securely — Synentra only stores the bcrypt hash.
 :::
 
+#### Examples
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X POST "http://localhost:7080/agents" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "billing-agent",
+    "ownerId": "team-finance",
+    "clientSecret": "my-strong-secret"
+  }'
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`http://localhost:7080/agents`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'billing-agent',
+    ownerId: 'team-finance',
+    clientSecret: 'my-strong-secret'
+  })
+})
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.post(
+    f'http://localhost:7080/agents',
+    json={
+        'name': 'billing-agent',
+        'ownerId': 'team-finance',
+        'clientSecret': 'my-strong-secret'
+    }
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `201 Created`
+
 ---
 
-### Assign Policy
+### Assign policy
 
 ```http
-PUT /agents/{agentId}/policy
-Content-Type: application/json
+PUT <BASE_URL>/agents/<agentId>/policy
 ```
 
-**Request Body:**
+#### Request body
+
+A JSON object with the following fields:
 
 ```json
 {
@@ -121,30 +190,133 @@ Content-Type: application/json
 }
 ```
 
-**Response** `200 OK`
+#### Examples
 
-Associates the named policy with the agent. On every proxied request, Synentra will evaluate this policy.
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X PUT "http://localhost:7080/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/policy" \
+  -H "Content-Type: application/json" \
+  -d '{ "policyName": "billing-policy" }'
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`http://localhost:7080/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/policy`, {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ policyName: 'billing-policy' })
+})
+.then(res => {
+  if (res.ok) console.log('Policy assigned');
+});
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.put(
+    f'http://localhost:7080/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/policy',
+    json={'policyName': 'billing-policy'}
+)
+print(response.status_code)
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
 
 ---
 
-### Delete Agent
+### Delete an agent
 
 ```http
-DELETE /agents/{agentId}
+DELETE <BASE_URL>/agents/<agentId>
 ```
+
+#### Examples
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X DELETE "http://localhost:7080/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`http://localhost:7080/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6`, {
+  method: 'DELETE'
+})
+.then(res => {
+  if (res.ok) console.log('Agent deleted');
+});
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.delete(
+    f'http://localhost:7080/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6'
+)
+print(response.status_code)
+```
+</TabItem>
+
+</Tabs>
 
 **Response** `200 OK`
 
-Removes the agent. Any active JWT tokens for this agent will be rejected as agent lookup will fail.
-
 ---
 
-## Trust Score
+### Lift quarantine
 
-Every agent starts with a trust score of `0.5`. The score is adjusted dynamically by the `DecisionEngine` based on request history and risk. The score directly influences policy decisions and HITL thresholds.
+```http
+POST <BASE_URL>/agents/<agentId>/lift-quarantine
+```
 
-| Score Range | Interpretation |
-|---|---|
-| 0.0 – 0.3 | High risk — likely to trigger HITL |
-| 0.3 – 0.7 | Neutral |
-| 0.7 – 1.0 | Trusted — lower likelihood of interception |
+#### Examples
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl -X POST "${BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/lift-quarantine"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`${BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/lift-quarantine`, {
+  method: 'POST'
+})
+.then(res => {
+  if (res.ok) console.log('Quarantine lifted');
+});
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.post(
+    f'{BASE_URL}/agents/3fa85f64-5717-4562-b3fc-2c963f66afa6/lift-quarantine'
+)
+print(response.status_code)
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`

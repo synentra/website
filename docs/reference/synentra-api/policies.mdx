@@ -1,0 +1,152 @@
+---
+id: policies-api
+title: Policies API Reference
+sidebar_label: Policies API
+sidebar_position: 2
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Policies
+
+A **Policy** defines the authorization and governance rules that determine what an AI agent is permitted to do. Policies consist of prioritized rules, each containing one or more conditions that evaluate incoming requests.
+
+Policies are evaluated by Synentra before requests are forwarded to the target service.
+
+:::tip Base URL
+Throughout this guide the base URL is assumed to be your running server, e.g. `http://localhost:7080`.
+Replace `<BASE_URL>` in the examples with your actual server address.
+:::
+
+---
+
+## API Endpoints
+
+### Get policies list
+
+Returns a paginated list of all policies.
+
+```http
+GET <BASE_URL>/policies?page=1&pageSize=25
+```
+
+#### URL Parameters
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `page` | `int` | `1` | Page number |
+| `pageSize` | `int` | `25` | Items per page |
+
+#### Examples
+
+Example of invoking a method on an action:
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl "http://localhost:7080/policies?page=1&pageSize=25"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`http://localhost:7080/policies?page=1&pageSize=25`)
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.get(
+    f'http://localhost:7080/policies',
+    params={'page': 1, 'pageSize': 25}
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+```json
+{
+  "items": [
+    {
+      "policyName": "data-agent",
+      "description": "Governs a data-pipeline agent",
+      "owner": "data-team",
+    }
+  ],
+  "page": 1,
+  "pageSize": 25,
+  "totalCount": 1
+}
+```
+
+---
+
+### Get policy details
+
+```http
+GET <BASE_URL>/policies/{name}
+```
+
+#### URL Parameters
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `name` | `string` | `` | The policy name to getting details |
+
+#### Examples
+
+Example of invoking a method on an action:
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+curl "http://localhost:7080/policies/data-agent"
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+fetch(`http://localhost:7080/policies/data-agent`)
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+response = requests.get(
+    f'http://localhost:7080/policies/data-agent'
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+**Response** `200 OK`
+
+```json
+{
+  {
+    "name": "data-agent",
+    "description": "Governs a data-pipeline agent",
+    "owner": "data-team",
+    "CreatedOn": "2026-07-19T15:42:31Z",
+    "Default": "hitl",
+    "Rules": []
+  }
+}
+```

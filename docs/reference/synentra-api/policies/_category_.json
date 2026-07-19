@@ -1,9 +1,0 @@
-{
-  "label": "Policies",
-  "position": 7,
-  "link": {
-    "type": "generated-index",
-    "slug": "/policies",
-    "description": "Define the rules that govern what an agent is permitted to do in Synentra. Policies are used to enforce security, compliance, and operational guidelines for agents, ensuring they act within defined boundaries."
-  }
-}
