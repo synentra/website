@@ -1,20 +1,28 @@
 ---
-id: proxy
-title: Proxying Requests
-sidebar_label: Proxy
-sidebar_position: 8
+id: proxy-api
+title: Proxying API Reference
+sidebar_label: Proxy API
+sidebar_position: 4
 ---
 
-# Proxying Requests
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-Synentra acts as a **reverse proxy gateway**. Any HTTP request prefixed with `/proxy/` is intercepted, evaluated, and either forwarded to the upstream service or blocked/held.
+Synentra acts as a **reverse proxy gateway**. Any HTTP request prefixed with `/proxy/` is intercepted, evaluated, and either forwarded to the upstream service, blocked, or put on hold for human-in-the-loop (HITL) approval.
+
+The proxy supports **all HTTP methods** – `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, etc. – and forwards the method, headers, and body (when present) to the upstream service.
+
+:::tip Base URL
+Throughout this guide the base URL is assumed to be your running server, e.g. `http://localhost:7080`.
+Replace `<BASE_URL>` in the examples with your actual server address.
+:::
 
 ---
 
 ## URL Format
 
 ```
-GET /proxy/<full-upstream-url>
+<method> <BASE_URL>/proxy/<full-upstream-url>
 ```
 
 The full absolute URL of the upstream target is embedded in the path:
@@ -24,114 +32,197 @@ GET /proxy/https://api.example.com/users/123
 Authorization: Bearer <agent-jwt>
 ```
 
-Synentra will:
-1. Extract `https://api.example.com/users/123` as the target.
-2. Set `context.Request.Path` to `/users/123` and forward to `api.example.com`.
-
 :::info
 Query strings embedded in the target URL are preserved and forwarded correctly.
 :::
 
----
+### Supported response codes
 
-## Request Pipeline
-
-Every proxied request goes through the following stages in order:
-
-### 1. Agent Authentication
-
-`Middleware` validates the `Authorization: Bearer <token>` header.
-
-- Missing or invalid token → the request continues unauthenticated.
-- `Middleware` then requires `AgentId` → returns `401 Unauthorized` if absent.
-
-### 2. Agent Status Check
-
-If the agent does not exist or has `Status = Revoked`, the request is rejected with `403 Forbidden`.
-
-### 3. Rate Limiting
-
-If the agent has exceeded its configured `RequestsPerMinute`, the gateway returns:
-
-```
-HTTP/1.1 429 Too Many Requests
-Retry-After: 60
-```
-
-### 4. Circuit Breaker
-
-If the circuit for the target host is open, the gateway returns `503 Service Unavailable`.
-
-### 5. Decision Engine
-
-A `RequestContext` is constructed and passed to `Decision Engine` for Evaluating. The engine runs three evaluations in sequence:
-
-| Stage | Description | Short-circuits if… |
-|---|---|---|
-| **Policy** | Evaluates the agent's assigned policy rules | Rule matches Deny or Hitl |
-| **Risk Scoring** | Computes a weighted risk score | Score exceeds HITL threshold |
-| **Semantic** | LLM/ONNX intent classification (if enabled) | Model verdict is negative |
-
-### 6. Decision Outcome
-
-| Outcome | HTTP Response | Description |
-|---|---|---|
-| `Allow` | Forward to upstream | Request is forwarded |
-| `Deny` | `403 Forbidden` | Request body contains the denial reason |
-| `Hitl` | `202 Accepted` | `Location` header set to `/hitl/status/{id}` |
+| Status | Description |
+|---|---|
+| Upstream status | Request was allowed and forwarded. Returns upstream response. |
+| `202 Accepted` | Request intercepted — HITL review required. `Location` header set. |
+| `401 Unauthorized` | Missing or invalid agent token |
+| `403 Forbidden` | Agent is revoked or policy denied the request |
+| `429 Too Many Requests` | Rate limit exceeded |
+| `503 Service Unavailable` | Circuit breaker open for upstream host |
 
 ---
 
-## Request Forwarding
+## Request Forwarding (for Allowed Requests)
 
-When a request is allowed, Synentra constructs a new `Message` and forwards it.
+When a request is allowed, Synentra constructs a new `HttpMessage` and forwards it.
 
 **Headers forwarded:**
-- All headers from the original request, **except**: `Authorization`, `Host`, `Connection`, `Content-Length`
+- All headers from the original request **except** those listed below.
 
 **Headers NOT forwarded:**
-- `Authorization` — This is Synentra's internal JWT, not intended for the upstream.
-
----
-
-## `RequestContext` Model
-
-The following data is available during policy/risk/semantic evaluation:
-
-| Field | Type | Description |
-|---|---|---|
-| `Method` | `string` | HTTP method |
-| `Path` | `string` | Path and query string |
-| `TargetUrl` | `string` | Full upstream URL |
-| `Headers` | `Dictionary<string, string>` | Sanitised request headers |
-| `AgentId` | `Guid` | Authenticated agent ID |
-| `PolicyName` | `string?` | Assigned policy name |
-| `TrustScore` | `double` | Agent's current trust score |
-| `Body` | `string?` | Raw request body |
+- The authorization header name is configurable via `SecurityConfiguration.AgentAuth.CustomHeaderName` (default: `"Synentra-Authorization"`). The configured header is excluded from forwarding.
+- `Host` – The host is set automatically from the target URI.
+- `Connection`, `Content-Length`, `Transfer-Encoding`, `Proxy-Connection`, `TE`, `Keep-Alive`, `Upgrade`, `Trailer` – These are managed by the HTTP stack.
 
 ---
 
 ## Example: Proxying a GET Request
 
-```http
-GET /proxy/https://jsonplaceholder.typicode.com/todos/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5...
+### 1. Proxying a GET Request
+
+The following example sends a request to `https://jsonplaceholder.typicode.com/todos/1` through the Synentra gateway.
+
+<Tabs groupId="lang">
+<TabItem value="curl" label="cURL" default>
+
+```curl
+curl -X GET "http://localhost:7080/proxy/https://jsonplaceholder.typicode.com/todos/1" \
+  -H "Synentra-Authorization: Bearer <your-agent-jwt>"
 ```
 
-If the agent is active, not rate-limited, and the decision engine allows it, Synentra forwards the request and returns the upstream response unchanged.
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+fetch('http://localhost:7080/proxy/https://jsonplaceholder.typicode.com/todos/1', {
+  method: 'GET',
+  headers: {
+    'Synentra-Authorization': 'Bearer <your-agent-jwt>'
+  }
+})
+.then(res => res.json())
+.then(console.log);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.get(
+    'http://localhost:7080/proxy/https://jsonplaceholder.typicode.com/todos/1',
+    headers={'Synentra-Authorization': 'Bearer <your-agent-jwt>'}
+)
+print(response.json())
+```
+
+</TabItem>
+</Tabs>
+
+If the agent is active, within rate limits, the circuit is closed, and the decision engine allows the request, Synentra forwards the request and returns the upstream response unchanged.
 
 ---
 
-## Example: HITL Interception
+### 2. Proxying a POST Request with a JSON Body
 
-```http
-DELETE /proxy/https://api.example.com/users/all
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5...
+This example sends a `POST` request with a JSON payload to create a new resource. The request body is evaluated by the decision engine before forwarding.
 
-HTTP/1.1 202 Accepted
-Location: /hitl/abc-123
+<Tabs groupId="lang">
+<TabItem value="curl" label="cURL" default>
 
-Request pending approval. Poll /hitl/abc-123
+```curl
+curl -X POST "http://localhost:7080/proxy/https://api.example.com/users" \
+  -H "Synentra-Authorization: Bearer <your-agent-jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "John Doe", "email": "john@example.com"}'
 ```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+fetch('http://localhost:7080/proxy/https://api.example.com/users', {
+  method: 'POST',
+  headers: {
+    'Synentra-Authorization': 'Bearer <your-agent-jwt>',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'John Doe',
+    email: 'john@example.com'
+  })
+})
+.then(res => res.json())
+.then(console.log);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.post(
+    'http://localhost:7080/proxy/https://api.example.com/users',
+    headers={'Synentra-Authorization': 'Bearer <your-agent-jwt>'},
+    json={'name': 'John Doe', 'email': 'john@example.com'}
+)
+print(response.json())
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### 3. HITL Interception (DELETE Request)
+
+If the decision engine returns `Hitl` (for example, when a `DELETE` operation is deemed risky), the gateway responds with a `202 Accepted` status and a `Location` header for polling.
+
+<Tabs groupId="lang">
+<TabItem value="curl" label="cURL" default>
+
+```curl
+curl -X DELETE "http://localhost:7080/proxy/https://api.example.com/users/all" \
+  -H "Synentra-Authorization: Bearer <your-agent-jwt>"
+```
+
+**Response:**
+```http
+HTTP/1.1 202 Accepted
+Location: /hitl/status/abc-123
+
+Request pending approval. Poll /hitl/status/abc-123
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+fetch('http://localhost:7080/proxy/https://api.example.com/users/all', {
+  method: 'DELETE',
+  headers: {
+    'Synentra-Authorization': 'Bearer <your-agent-jwt>'
+  }
+})
+.then(res => {
+  if (res.status === 202) {
+    const location = res.headers.get('Location');
+    console.log(`Request pending approval. Poll ${location}`);
+  } else {
+    return res.text();
+  }
+})
+.then(console.log);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.delete(
+    'http://localhost:7080/proxy/https://api.example.com/users/all',
+    headers={'Synentra-Authorization': 'Bearer <your-agent-jwt>'}
+)
+
+if response.status_code == 202:
+    location = response.headers.get('Location')
+    print(f"Request pending approval. Poll {location}")
+else:
+    print(response.text)
+```
+
+</TabItem>
+</Tabs>
 
 The operator can then approve or deny this request via the [HITL endpoints](./hitl).
