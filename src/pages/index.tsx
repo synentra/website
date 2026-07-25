@@ -27,7 +27,7 @@ function HomepageHeader() {
                 Get started
               </Link>
               <Link className="button hero-button--secondary button--lg margin-right--md margin-bottom--md"
-                to="docs/reference/synentra-api">
+                to="docs/reference/api">
                 API Reference
               </Link>
               <Link className="button hero-button--secondary button--lg margin-right--md margin-bottom--md"

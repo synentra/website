@@ -1,9 +1,9 @@
 {
   "label": "Synentra API",
-  "position": 1,
+  "position": 2,
   "link": {
     "type": "generated-index",
-    "slug": "/reference/synentra-api",
+    "slug": "/reference/api",
     "description": "The Synentra API Reference provides comprehensive documentation for developers looking to integrate with the Synentra platform. It includes detailed information on available endpoints, request and response formats, authentication methods, and usage examples to help you effectively utilize the API."
   }
 }

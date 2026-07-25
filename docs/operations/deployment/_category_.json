@@ -1,0 +1,9 @@
+{
+  "label": "Deployment",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "slug": "/operations/deployment",
+    "description": "This section covers the deployment process of the application, including best practices, configuration options, and troubleshooting tips. It provides guidance for deploying the application in various environments and ensuring optimal performance."
+  }
+}

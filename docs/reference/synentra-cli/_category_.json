@@ -1,9 +1,0 @@
-{
-  "label": "Synentra CLI Reference",
-  "position": 1,
-  "link": {
-    "type": "generated-index",
-    "slug": "/reference/synentra-cli",
-    "description": "This section provides a comprehensive reference for the Synentra CLI, detailing its commands, options, and usage. It serves as a guide for users to effectively utilize the CLI for various tasks and operations."
-  }
-}

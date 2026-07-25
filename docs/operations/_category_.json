@@ -1,8 +1,9 @@
 {
   "label": "Operations",
-  "position": 5,
+  "position": 6,
   "link": {
     "type": "generated-index",
-    "slug": "/operations"
+    "slug": "/operations",
+    "description": "Deploy, maintain, and scale the system in production environments. This section covers installation strategies, runtime configuration, health monitoring, performance tuning, backup and recovery, high availability setups, and version upgrade procedures."
   }
 }
