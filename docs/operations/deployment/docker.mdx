@@ -128,26 +128,8 @@ All `appsettings.json` keys can be overridden via environment variables:
 | `System__Storage__Cache__Providers__Redis__ConnectionString` | `redis:6379` | Redis address |
 | `System__RateLimit__DefaultRequestsPerMinute` | `60` | Per-agent rate limit |
 | `System__CircuitBreaker__FailureThreshold` | `5` | Failures before circuit opens |
-| `Security__AgentAuth__Provider` | `SelfSigned` or `Jwt` | Auth provider |
-| `Security__AgentAuth__Jwt__Issuer` | `https://auth.example.com` | JWT issuer |
-| `Security__AgentAuth__Jwt__Audience` | `synentra-gateway` | JWT audience |
-| `Security__AgentAuth__Jwt__SecretKey` | `your-key` | JWT signing key |
-| `Policy__Enabled` | `true` | Enable policy engine |
-| `Policy__DefaultProvider` | `Internal` or `Opa` | Policy provider |
-| `Policy__Providers__Internal__Directory` | `/policies` | Policy files directory |
-| `Policy__Providers__Opa__BaseUrl` | `http://opa:8181` | OPA server URL |
-| `Semantic__Enabled` | `false` | Enable semantic analysis |
-| `Semantic__DefaultProvider` | `Internal` | Semantic provider |
-| `Semantic__Providers__OpenAi__ApiKey` | `sk-...` | OpenAI API key |
-| `HumanInTheLoop__Enabled` | `true` | Enable HITL |
-| `HumanInTheLoop__Threshold` | `0.8` | Risk score HITL trigger |
-| `HumanInTheLoop__TimeoutSeconds` | `3600` | HITL request TTL |
-| `HumanInTheLoop__NotificationWebhookUrl` | `https://hooks.example.com/...` | HITL webhook |
-| `Observability__Logging__DefaultLogLevel` | `Information` | Log level |
-| `Observability__Logging__Seq__Enabled` | `true` | Enable Seq sink |
-| `Observability__Logging__Seq__ServerUrl` | `http://seq:5341` | Seq server URL |
-| `SecretManagement__DefaultProvider` | `AzureKeyVault` | Secret provider |
-| `SecretManagement__Providers__AzureKeyVault__VaultUri` | `https://vault.vault.azure.net/` | Key Vault URI |
+
+See the [Configuration Reference](../../configuration) reference for all available settings.
 
 ---
 
@@ -284,9 +266,3 @@ Example response:
   "healthCheckDuration": "00:00:00.0023456"
 }
 ```
-
----
-
-## See Also
-
-- [Configuration Reference](../../configuration)
