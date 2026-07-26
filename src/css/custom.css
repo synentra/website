@@ -250,12 +250,12 @@ html[data-theme='dark'] {
   }
 }
 
-.join-discord-button {
-  color: var(--ifm-button-color) !important;
+.button-discord {
+  color: #ffffff !important;
 }
 
-.join-discord-button:hover {
-  color: var(--ifm-button-color) !important;
+.button-discord:hover {
+  color: #ffffff !important;
 }
 
 .header-github-link:hover {

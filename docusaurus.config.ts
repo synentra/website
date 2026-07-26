@@ -83,6 +83,12 @@ const config: Config = {
         position: 'left'
       },
       {
+        to: 'https://discord.synentra.io/',
+        position: 'right',
+        label: 'Join our Discord',
+        className: 'button button--primary button--md button-discord'
+      },
+      {
         href: 'https://github.com/synentra/synentra',
         position: 'right',
         className: 'header-github-link',
@@ -116,7 +122,11 @@ const config: Config = {
         {
           label: 'Linkedin',
           href: 'https://www.linkedin.com/company/synentra',
-        }
+        },
+        {
+          label: 'Discord',
+          href: 'https://discord.synentra.io/'
+        },
         ],
       },
       {
