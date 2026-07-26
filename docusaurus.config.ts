@@ -116,8 +116,8 @@ const config: Config = {
         title: 'Community',
         items: [
         {
-          label: 'GitHub',
-          href: 'https://github.com/synentra/synentra',
+          label: 'GitHub discussions',
+          href: 'https://github.com/synentra/synentra/discussions',
         },
         {
           label: 'Linkedin',
