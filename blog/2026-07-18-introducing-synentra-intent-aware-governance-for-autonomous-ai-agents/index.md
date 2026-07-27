@@ -4,7 +4,10 @@ title: "Introducing Synentra: Intent-Aware Governance for Autonomous AI Agents"
 subtitle: "Why traditional API gateways fall short when AI agents talk to your systems"
 authors: maintainers
 tags: [Autonomous-agents, Intent-based-security, Intent-based-governance, AI-governance-platform, Semantic-security, Intent-aware-governance, AI-agent-security, AI governance, Semantic-policy-enforcement, Agent-gateways]
+image: ./synentra-intro.png
 ---
+
+![Introducing Synentra - Intent-Aware Governance for Autonomous AI Agents](./synentra-intro.png)
 
 In 2026, autonomous AI agents are reshaping the enterprise. They answer customer questions, update CRM records, query internal knowledge bases, and even trigger financial transactions—all without a human directly driving every click. This shift promises incredible efficiency, but it also introduces a governance nightmare: how do you secure, audit, and trust software that can reason, plan, and act on its own? Traditional API gateways, built for deterministic, human-initiated traffic, are simply not up to the task. That’s why we built **Synentra**, an open-source, intent-aware governance layer purpose-built for the age of AI agents.
 
