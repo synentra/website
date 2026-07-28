@@ -2,7 +2,7 @@
 id: risk-scoring
 title: Risk Scoring
 sidebar_label: Risk Scoring
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # Risk Scoring
@@ -15,15 +15,34 @@ Synentra's **Risk Scoring Engine** evaluates every proxied request against a set
 
 ```mermaid
 flowchart TD
-  A[RequestContext] --> B[RiskScoringService]
-  B --> C[RiskScoreAggregator]
+    RC["Request Context"]
+        --> RS["Risk Scoring Service"]
+        --> AG["Risk Score Aggregator"]
 
-  C --> D[MethodRiskCalculator<br/>Weight: 0.20]
-  C --> E[PathRiskCalculator<br/>Weight: 0.25]
-  C --> F[BodySizeRiskCalculator<br/>Weight: 0.10]
-  C --> G[TimeBasedCalculator<br/>Weight: 0.10]
-  C --> H[AgentHistoryCalculator<br/>Weight: 0.15]
-  C --> I[AnomalyDetectionCalculator<br/>Weight: 0.20]
+    subgraph CALC["Risk Calculators"]
+        direction TB
+
+        M["Method<br/><small>Weight: 0.20</small>"]
+        P["Path<br/><small>Weight: 0.25</small>"]
+        B["Body Size<br/><small>Weight: 0.10</small>"]
+        T["Time-Based<br/><small>Weight: 0.10</small>"]
+        H["Agent History<br/><small>Weight: 0.15</small>"]
+        A["Anomaly Detection<br/><small>Weight: 0.20</small>"]
+    end
+
+    AG --> M
+    AG --> P
+    AG --> B
+    AG --> T
+    AG --> H
+    AG --> A
+
+    M --> FS["Final Risk Score"]
+    P --> FS
+    B --> FS
+    T --> FS
+    H --> FS
+    A --> FS
 ```
 
 Each calculator returns a score in $[0, 1]$. The aggregator produces a **weighted average** across all calculators:
