@@ -255,7 +255,7 @@ In each scenario, the goal is the same: **enable the speed and autonomy of AI ag
 Synentra is designed to be immediately testable. Run it locally with a single Docker command:
 
 ```bash
-docker run -e ASPNETCORE_ENVIRONMENT=Development --name synentra -p 7080:7080 ghcr.io/synentra/synentra:latest
+docker run --name synentra -p 7080:7080 ghcr.io/synentra/synentra:latest
 ```
 
 For complete Docker initialization instructions, refer to the [Initialize Synentra Docker](../docs/getting-started/initialize-synentra-docker) documentation.
