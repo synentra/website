@@ -1,0 +1,9 @@
+{
+  "label": "QuickStarts",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "slug": "/getting-started/quickstarts",
+    "description": "QuickStarts are a collection of guides that help you get started with Synentra quickly. Each QuickStart provides step-by-step instructions to set up and use specific features or integrations, making it easier for you to achieve your goals efficiently."
+  }
+}

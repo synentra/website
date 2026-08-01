@@ -1,0 +1,128 @@
+---
+id: synentra-in-5-minutes
+title: Synentra in 5 Minutes (Quickstart)
+sidebar_label: "Synentra in 5 Minutes"
+sidebar_position: 1
+description: This quickstart guide enables you to install Synentra, register an agent and send a first request, and run it end‑to‑end in under five minutes. It is designed for first‑time users with no prior knowledge of Synentra.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+This quickstart guide enables you to install Synentra, register an agent and send a first request, and run it end‑to‑end in under five minutes. It is designed for first‑time users with no prior knowledge of Synentra.
+
+**Prerequisites**:
+- Docker (v24 or later)
+- curl or a similar HTTP client
+- Basic understanding of REST APIs
+
+---
+
+## Step 1: Run Synentra
+
+```bash
+docker run -d --name synentra -p 7080:7080 ghcr.io/synentra/synentra:latest
+```
+
+This starts Synentra with:
+- The Gateway API listening on `http://localhost:7080`
+- An embedded SQLite database (no external database required)
+- The built‑in DistilBERT intent classifier
+
+> **Expected outcome**: The container starts and Synentra initialises within a few seconds.
+
+## Step 2: Verify the Installation
+
+Confirm that Synentra is running and healthy:
+
+```bash
+curl -s http://localhost:7080/health
+```
+
+A successful response looks like this:
+
+```json
+{
+  "status": "Healthy",
+  "healthCheckDuration": "00:00:00.0123456"
+}
+```
+
+## Step 3: Create Your First Agent
+
+Synentra acts as a gateway for your upstream APIs. In this tutorial we use a public test API, but you can replace it with your own service.
+
+Register a new agent by sending a `POST` request to the `/agents` endpoint:
+
+```bash
+curl -X POST "http://localhost:7080/agents" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "billing-agent",
+    "ownerId": "team-finance",
+    "clientSecret": "my-strong-secret"
+  }'
+```
+
+The response will include an `agentId` (a UUID).  
+Copy this value – you will need it in the next step.
+
+## Step 4: Obtain a Security Token
+
+Agents authenticate using a short‑lived JWT. Exchange the agent credentials for a token:
+
+```bash
+curl -X POST "http://localhost:7080/tokens" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agentId": "<UUID>",
+    "clientSecret": "my-strong-secret"
+  }'
+```
+
+Replace `<UUID>` with the `agentId` you received in Step 3.  
+The response contains an `accessToken`:
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+Save this token – you will use it to authorise proxy requests.
+
+## Step 5: Send a Proxied Request
+
+Once the agent is registered and you have a token, you can forward requests through Synentra’s `/proxy` endpoint.  
+This example fetches a sample to‑do item from JSONPlaceholder:
+
+```bash
+curl -X GET "http://localhost:7080/proxy/https://jsonplaceholder.typicode.com/todos/1" \
+  -H "Synentra-Authorization: Bearer <your-agent-jwt>"
+```
+
+Replace `<your-agent-jwt>` with the `accessToken` from Step 4.  
+If everything works, you will see the JSON response from JSONPlaceholder, passed through Synentra.
+
+## Step 6: Clean Up
+
+When you are finished, stop and remove the container:
+
+```bash
+docker stop synentra
+docker rm synentra
+```
+
+All data stored in the embedded SQLite database will be deleted along with the container.
+
+---
+
+## Troubleshooting
+
+### Container fails to start
+Check the container logs:
+```bash
+docker logs synentra
+```
+Common causes:
+- **Port 7080 already in use** – Either stop the process occupying the port, or map a different host port, e.g. `-p 7081:7080`. Remember to adjust the URLs in the subsequent steps accordingly.
