@@ -27,6 +27,10 @@ function HomepageHeader() {
                 Get started
               </Link>
               <Link className="button hero-button--secondary button--lg margin-right--md margin-bottom--md"
+                to="docs/getting-started/quickstarts/synentra-in-5-minutes">
+                Quick Starts
+              </Link>
+              <Link className="button hero-button--secondary button--lg margin-right--md margin-bottom--md"
                 to="docs/reference/api">
                 API Reference
               </Link>
