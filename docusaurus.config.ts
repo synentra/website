@@ -54,6 +54,7 @@ const config: Config = {
         anonymizeIP: true,
       },
     ],
+    '@r74tech/docusaurus-plugin-panzoom'
   ],
   themes: ['@docusaurus/theme-mermaid'],
   themeConfig: {
@@ -63,6 +64,28 @@ const config: Config = {
     },
     mermaid: {
       theme: { light: 'neutral', dark: 'dark' },
+    },
+    zoom: {
+      selectors: [
+        'div.mermaid[data-processed="true"]',
+        'div.docusaurus-mermaid-container',
+      ],
+  
+      wrap: true,
+  
+      toolbar: {
+        enabled: true,
+        position: 'top-right',
+        opacity: 0.7,
+      },
+  
+      enableWheelZoom: true,
+      enableDoubleClickResetZoom: true,
+      restrictZoomOutBeyondOrigin: true,
+  
+      minScale: 1,
+      maxScale: 5,
+      step: 0.3,
     },
     navbar: {
       title: 'Synentra',

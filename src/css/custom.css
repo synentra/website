@@ -665,3 +665,22 @@ html[data-theme='dark'] {
 .codeBlockContent {
   border-radius: 12px;
 }
+
+.docusaurus-mermaid-container {
+  position: relative;
+  width: 100%;
+  min-height: 300px;
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  cursor: grab;
+}
+
+.docusaurus-mermaid-container:active {
+  cursor: grabbing;
+}
+
+.docusaurus-mermaid-container svg {
+  max-width: none;
+  height: auto;
+}
