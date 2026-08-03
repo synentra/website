@@ -34,42 +34,40 @@ In this tutorial, you will learn how to:
 
 Synentra evaluates intent before applying an internal policy. This allows policy rules to use the classified intent together with risk, trust, and request information.
 
-```text
-┌──────────────────────────────────────────────────────────────────────┐
-│                              Synentra                                │
-│                                                                      │
-│   Incoming Request                                                   │
-│          │                                                           │
-│          ▼                                                           │
-│   ┌───────────────────┐                                              │
-│   │ Intent Classifier │                                              │
-│   │ label, confidence │                                              │
-│   └─────────┬─────────┘                                              │
-│             │                                                        │
-│             ▼                                                        │
-│   ┌───────────────────┐                                              │
-│   │ Risk & Trust      │                                              │
-│   │ score and level   │                                              │
-│   └─────────┬─────────┘                                              │
-│             │                                                        │
-│             ▼                                                        │
-│   ┌──────────────────────────────────────────────────────────────┐   │
-│   │                 InternalPolicyProvider                       │   │
-│   │                                                              │   │
-│   │  1. Load the policy assigned to the agent                   │   │
-│   │  2. Build the policy input                                  │   │
-│   │  3. Sort rules by descending priority                       │   │
-│   │  4. Evaluate every condition in each rule                   │   │
-│   │  5. Return the first matching rule                          │   │
-│   │  6. Use the policy default when no rule matches             │   │
-│   └──────────────────────────────┬───────────────────────────────┘   │
-│                                  │                                   │
-│                                  ▼                                   │
-│                    Allow, Deny, or HITL                              │
-└──────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Synentra["Synentra"]
+        direction TB
+
+        Request["Incoming Request"]
+
+        IC["Intent Classifier<br/><small>label, confidence</small>"]
+
+        RT["Risk &amp; Trust<br/><small>score and level</small>"]
+
+        subgraph IPP["InternalPolicyProvider"]
+            direction TB
+
+            P1["1. Load the policy assigned to the agent"]
+            P2["2. Build the policy input"]
+            P3["3. Sort rules by descending priority"]
+            P4["4. Evaluate every condition in each rule"]
+            P5["5. Return the first matching rule"]
+            P6["6. Use the policy default when no rule matches"]
+
+            P1 --> P2 --> P3 --> P4 --> P5 --> P6
+        end
+
+        Decision["Allow, Deny, or HITL"]
+
+        Request --> IC
+        IC --> RT
+        RT --> P1
+        P6 --> Decision
+    end
 ```
 
-The internal provider retrieves the policy assigned through `RequestContext.PolicyName`. When no policy is assigned, the provider allows the request with the reason `No policy assigned`. If the named policy cannot be found, the request is denied.
+---
 
 ## Configure the Internal Policy Provider
 
