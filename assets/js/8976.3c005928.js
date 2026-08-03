@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunksynentra||=[]).push([[8976],{8976(e,s,a){a.d(s,{createPieServices:()=>r.f});var r=a(6019);a(1400)}}]);

@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunksynentra||=[]).push([[4229],{4229(e,s,a){a.d(s,{createCynefinServices:()=>n.t});var n=a(3486);a(1400)}}]);
