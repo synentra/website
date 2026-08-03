@@ -67,22 +67,19 @@ const config: Config = {
     },
     zoom: {
       selectors: [
-        'div.mermaid[data-processed="true"]',
-        'div.docusaurus-mermaid-container',
+        '.theme-mermaid svg',
+        '.docusaurus-mermaid-container svg',
+        'div.mermaid[data-processed="true"] svg',
       ],
-  
       wrap: true,
-  
       toolbar: {
         enabled: true,
         position: 'top-right',
         opacity: 0.7,
       },
-  
       enableWheelZoom: true,
       enableDoubleClickResetZoom: true,
       restrictZoomOutBeyondOrigin: true,
-  
       minScale: 1,
       maxScale: 5,
       step: 0.3,

@@ -684,3 +684,22 @@ html[data-theme='dark'] {
   max-width: none;
   height: auto;
 }
+
+#__blog-post-container.markdown {
+  overflow: visible !important;
+  user-select: text !important;
+  touch-action: auto !important;
+}
+
+.docusaurus-mermaid-container,
+.theme-mermaid {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+}
+
+.docusaurus-mermaid-container svg,
+.theme-mermaid svg {
+  max-width: none;
+}
