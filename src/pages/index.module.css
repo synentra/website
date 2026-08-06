@@ -191,6 +191,9 @@
   width: 16px;
   height: 16px;
   color: var(--brand);
+  border-radius: 50%;
+  border: 1px solid var(--brand);
+  padding: 1px;
 }
 
 .install {
