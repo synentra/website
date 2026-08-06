@@ -144,100 +144,6 @@ html[data-theme='dark'] {
   text-transform: uppercase;
 }
 
-/* Hero Title */
-.hero-title {
-  font-size:clamp(3rem,6vw,5rem);
-  font-weight:700;
-  line-height:1.0;
-  letter-spacing:-0.04em;
-  margin:auto;
-  z-index: 2;
-}
-
-/* Hero Subtitle */
-.hero-subtitle {
-  font-size: 1.25rem;
-  line-height: 1.8;
-  margin: 1.5rem auto 0;
-  color: var(--ifm-color-emphasis-600);
-}
-
-.hero--background {
-  position: relative;
-  overflow: hidden;
-  padding: 3rem 1rem 1rem;
-  color: var(--ifm-hero-title-text);
-
-  background:
-    /* Soft red glow */
-    radial-gradient(
-      circle at top center,
-      var(--hero-glow-color),
-      transparent 45%
-    ),
-
-    /* Base gradient */
-    linear-gradient(
-      180deg,
-      var(--hero-background-start),
-      var(--hero-background-middle)
-    );
-
-  background-size:
-    contain,
-    auto,
-    auto;
-
-  background-position:
-    right center,
-    top center,
-    center;
-
-  background-repeat:
-    no-repeat,
-    no-repeat,
-    no-repeat;
-}
-
-.hero__title {
-  color: var(--ifm-color-primary);
-}
-
-/* Floating grid */
-.hero--background::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-
-  background:
-  linear-gradient(
-  var(--grid-color) 1px,
-  transparent 1px
-  ),
-  linear-gradient(
-  90deg,
-  var(--grid-color) 1px,
-  transparent 1px
-  );
-
-  background-size: 40px 40px;
-
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.8), transparent);
-
-  pointer-events: none;
-}
-
-.hero-glow {
-  position: absolute;
-  width: 700px;
-  height: 700px;
-  right: -250px;
-  top: -200px;
-  border-radius: 50%;
-  background: radial-gradient(rgba(198,40,40,.12), transparent 70%);
-  filter: blur(80px);
-}
-
 /* Animation */
 @keyframes fadeInUp {
   from {
@@ -431,33 +337,6 @@ html[data-theme='dark'] {
   border-radius: 12px;
   border: 1px solid var(--ifm-color-emphasis-300);
   font-size: 16px;
-}
-
-.hero-button--secondary {
-  background-color: transparent !important;
-  border: 2px solid var(--border-color);
-  color: var( --ifm-hero-title-text) !important;
-  border-radius: 12px;
-  padding: 0.9rem 2rem;
-}
-
-.hero-button--secondary:hover {
-  color: var( --ifm-hero-title-text) !important;
-  border: 2px solid var(--ifm-color-primary);
-  border-radius: 12px;
-}
-
-.button--quickstart {
-  background: var(--ifm-color-primary) !important;
-  color: #ffffff !important;
-  border-radius: 12px;
-  padding: 0.9rem 2rem;
-}
-
-.button--quickstart:hover {
-  background: var(--ifm-color-primary-darkest) !important;
-  color: #ffffff !important;
-  border-radius: 12px;
 }
 
 /* About Section */
@@ -732,7 +611,7 @@ html[data-theme='dark'] {
   left: 12%;
   width: 76%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(198, 40, 40, 0.45), transparent);
+  background: linear-gradient(90deg, transparent, rgba(198, 40, 40, 0.65), transparent);
   content: '';
 }
 

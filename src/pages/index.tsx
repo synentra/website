@@ -160,9 +160,9 @@ function HomepageHeader(): JSX.Element {
 
   return (
     <header className={styles.hero}>
-      <div className={styles.backgroundGrid} aria-hidden="true" />
-      <div className={styles.heroGlow} aria-hidden="true" />
-      <div className={styles.heroWave} aria-hidden="true" />
+      <div className={styles.softGlow} aria-hidden="true" />
+      <div className={styles.waveLeft} aria-hidden="true" />
+      <div className={styles.waveRight} aria-hidden="true" />
 
       <div className={`${styles.heroContainer} container`}>
         <section className={styles.content}>
@@ -287,8 +287,8 @@ function HomepageHeader(): JSX.Element {
         <div className={styles.metricItem}>
           <div className={styles.metricIcon}><GaugeIcon /></div>
           <div className={styles.metricContent}>
-            <strong>&lt;30 ms</strong>
-            <span>Target P95 latency</span>
+            <strong>&lt;35 ms</strong>
+            <span>Target P85 latency</span>
           </div>
         </div>
 

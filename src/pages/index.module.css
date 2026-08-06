@@ -31,45 +31,29 @@
   align-items: center;
 }
 
-.backgroundGrid {
+.softGlow {
   position: absolute;
-  inset: 0;
-  opacity: 0.48;
-  background-image:
-    linear-gradient(rgba(17, 19, 24, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(17, 19, 24, 0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), transparent 86%);
+  inset: -20% -10% auto 35%;
+  height: 660px;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.2), transparent 62%);
+  filter: blur(18px);
   pointer-events: none;
 }
 
-.heroGlow {
+.waveLeft,
+.waveRight {
   position: absolute;
-  top: 5rem;
-  right: 8%;
-  width: 46rem;
-  height: 46rem;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(198, 40, 40, 0.1), transparent 60%);
-  filter: blur(24px);
-  pointer-events: none;
-}
-
-.heroWave {
-  position: absolute;
-  right: -4rem;
-  bottom: 10.2rem;
-  width: 36rem;
-  height: 18rem;
+  width: 520px;
+  height: 300px;
   opacity: 0.35;
-  background:
-    radial-gradient(circle at 0 100%, rgba(198, 40, 40, 0.18) 1.6px, transparent 1.7px) 0 0 / 16px 16px,
-    radial-gradient(circle at 100% 0, rgba(198, 40, 40, 0.18) 1.6px, transparent 1.7px) 8px 8px / 16px 16px;
-  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.9) 28%, rgba(0, 0, 0, 0.9) 100%);
-  transform: perspective(900px) rotateX(68deg);
-  transform-origin: bottom center;
   pointer-events: none;
+  background-image: radial-gradient(circle, rgba(198,40,40,.42) 1.1px, transparent 1.2px);
+  background-size: 12px 12px;
+  mask-image: radial-gradient(ellipse at center, #000 5%, transparent 70%);
 }
+
+.waveLeft { left: 31%; top: 37%; transform: rotate(-9deg) skewY(-8deg); }
+.waveRight { right: -8%; top: 35%; transform: rotate(8deg) skewY(10deg); }
 
 .content {
   max-width: 34rem;
@@ -471,8 +455,8 @@
 }
 
 .decisionIcon svg {
-  width: 1.8rem;
-  height: 1.8rem;
+  width: 3rem;
+  height: 3rem;
 }
 
 .decision > div:nth-child(2) {
@@ -683,11 +667,6 @@
     min-height: 0;
     margin: 0 auto;
   }
-
-  .heroWave {
-    right: -8rem;
-    bottom: 18rem;
-  }
 }
 
 @media (max-width: 996px) {
@@ -716,6 +695,8 @@
   .metricItem:nth-child(4) {
     border-top: 1px solid rgba(17, 19, 24, 0.08);
   }
+
+  .waveLeft { left:-12%; top:20%; }
 }
 
 @media (max-width: 768px) {
