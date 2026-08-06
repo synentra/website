@@ -16,8 +16,8 @@
 }
 
 .contributorCard:hover {
-  border-color: rgba(198, 40, 40, 0.16);
-  background: rgba(198, 40, 40, 0.035);
+  border-color: rgba(198, 40, 40, 0.46);
+  background: rgba(198, 40, 40, 0.055);
   transform: translateY(-4px);
 }
 
