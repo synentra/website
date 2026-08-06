@@ -703,3 +703,100 @@ html[data-theme='dark'] {
 .theme-mermaid svg {
   max-width: none;
 }
+/* ========================================================================== */
+/* Modern homepage sections                                                   */
+/* ========================================================================== */
+
+.about-section {
+  padding: 6rem 0;
+  background:
+    radial-gradient(circle at 50% 15%, rgba(198, 40, 40, 0.045), transparent 35%),
+    transparent;
+}
+
+.about-wrapper {
+  position: relative;
+  max-width: 980px;
+  margin: auto;
+  padding: clamp(2rem, 5vw, 4rem);
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 20px;
+  background: var(--ifm-background-surface-color);
+  box-shadow: 0 24px 70px rgba(17, 24, 39, 0.08);
+}
+
+.about-wrapper::before {
+  position: absolute;
+  top: 0;
+  left: 12%;
+  width: 76%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(198, 40, 40, 0.45), transparent);
+  content: '';
+}
+
+.about-kicker,
+.section-kicker {
+  margin-bottom: 0.75rem;
+  color: var(--ifm-color-primary);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.about-title {
+  margin-bottom: 2rem;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 780;
+  letter-spacing: -0.035em;
+  text-align: center;
+}
+
+.about-wrapper p {
+  max-width: 850px;
+  margin: 0 auto 1.4rem;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.85;
+}
+
+.about-wrapper p:last-child {
+  margin-bottom: 0;
+}
+
+.contributorsSection {
+  padding: 6rem 0;
+  text-align: center;
+}
+
+.contributorsTitle {
+  margin-bottom: 0.75rem;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 780;
+  letter-spacing: -0.035em;
+}
+
+.contributorsDescription {
+  max-width: 660px;
+  margin: 0 auto 2.75rem;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.contributorsGridWrapper {
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 20px;
+  background: var(--ifm-background-surface-color);
+  box-shadow: 0 18px 50px rgba(17, 24, 39, 0.07);
+}
+
+html[data-theme='dark'] .about-wrapper,
+html[data-theme='dark'] .contributorsGridWrapper {
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: none;
+}

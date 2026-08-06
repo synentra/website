@@ -103,6 +103,35 @@ const config: Config = {
         position: 'left'
       },
       {
+        to: '/docs/reference/api', 
+        label: 'API Reference', 
+        position: 'left'
+      },
+      {
+        to: '/docs/integrations', 
+        label: 'Integrations', 
+        position: 'left'
+      },
+      {
+        type: 'dropdown',
+        label: 'Community',
+        position: 'left',
+        items: [
+          {
+            label: 'GitHub Discussions',
+            href: 'https://github.com/synentra/synentra/discussions',
+          },
+          {
+            label: 'Discord',
+            href: 'https://discord.synentra.io/',
+          },
+          {
+            label: 'Linkedin',
+            href: 'https://www.linkedin.com/company/synentra',
+          },
+        ],
+      },
+      {
         to: 'https://discord.synentra.io/',
         position: 'right',
         label: 'Join our Discord',
@@ -140,12 +169,12 @@ const config: Config = {
           href: 'https://github.com/synentra/synentra/discussions',
         },
         {
-          label: 'Linkedin',
-          href: 'https://www.linkedin.com/company/synentra',
-        },
-        {
           label: 'Discord',
           href: 'https://discord.synentra.io/'
+        },
+        {
+          label: 'Linkedin',
+          href: 'https://www.linkedin.com/company/synentra',
         },
         ],
       },
