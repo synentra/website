@@ -526,8 +526,8 @@ Context
 <hr>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="references">References<a href="https://synentra.io/blog/understanding-intent-classification-with-onnx-and-distilbert#references" class="hash-link" aria-label="Direct link to References" title="Direct link to References" translate="no">​</a></h2>
 <ol>
-<li class=""><a href="https://huggingface.co/docs/transformers/v4.47.0/en/model_doc/distilbert?utm_source=chatgpt.com" target="_blank" rel="noopener noreferrer" class="">https://huggingface.co/docs/transformers/v4.47.0/en/model_doc/distilbert?utm_source=chatgpt.com</a> "DistilBERT · Hugging Face"</li>
-<li class=""><a href="https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html?utm_source=chatgpt.com" target="_blank" rel="noopener noreferrer" class="">https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html?utm_source=chatgpt.com</a> "Quantize ONNX models | onnxruntime"</li>
+<li class=""><a href="https://huggingface.co/docs/transformers/v4.47.0/en/model_doc/distilbert" target="_blank" rel="noopener noreferrer" class="">https://huggingface.co/docs/transformers/v4.47.0/en/model_doc/distilbert</a> "DistilBERT · Hugging Face"</li>
+<li class=""><a href="https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html" target="_blank" rel="noopener noreferrer" class="">https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html</a> "Quantize ONNX models | onnxruntime"</li>
 </ol>]]></content>
         <author>
             <name>Maintainers</name>
