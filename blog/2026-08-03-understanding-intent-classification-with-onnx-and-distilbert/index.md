@@ -7,9 +7,6 @@ date: 2026-08-03
 image: /img/synentra-onnx-distilbert.png
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 ![Understanding Intent Classification with ONNX and DistilBERT](./synentra-onnx-distilbert.png)
 
 AI agents do not interact with enterprise APIs like traditional applications.
@@ -1483,5 +1480,5 @@ When semantic understanding is combined with identity, policy, risk, trust, and 
 
 ## References
 
-1. https://huggingface.co/docs/transformers/v4.47.0/en/model_doc/distilbert?utm_source=chatgpt.com "DistilBERT · Hugging Face"
-2. https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html?utm_source=chatgpt.com "Quantize ONNX models | onnxruntime"
+1. https://huggingface.co/docs/transformers/v4.47.0/en/model_doc/distilbert "DistilBERT · Hugging Face"
+2. https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html "Quantize ONNX models | onnxruntime"
