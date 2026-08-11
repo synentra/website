@@ -4,7 +4,7 @@ title: "Understanding Intent Classification with ONNX and DistilBERT"
 authors: maintainers
 tags: [Intent-Classification, ONNX, DistilBert, Intent-based-security, Intent-based-governance, AI-governance-platform, Semantic-security, MachineLearning, AI] 
 date: 2026-08-03
-image: /img/synentra-onnx-distilbert.png
+image: /synentra-onnx-distilbert.png
 ---
 
 ![Understanding Intent Classification with ONNX and DistilBERT](./synentra-onnx-distilbert.png)
