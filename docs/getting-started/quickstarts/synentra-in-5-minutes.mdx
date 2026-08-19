@@ -3,43 +3,131 @@ id: synentra-in-5-minutes
 title: Synentra in 5 Minutes (Quickstart)
 sidebar_label: "Synentra in 5 Minutes"
 sidebar_position: 1
-description: This quickstart guide enables you to install Synentra, register an agent and send a first request, and run it end‑to‑end in under five minutes. It is designed for first‑time users with no prior knowledge of Synentra.
+description: Install Synentra, create an intent-aware policy, register an agent, obtain a JWT, and send your first governed API request in under five minutes.
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+This quickstart takes you through a complete Synentra request flow: start the gateway, register an AI agent, authenticate it, assign an intent-aware policy, and proxy a request to an upstream API.
 
-This quickstart guide enables you to install Synentra, register an agent and send a first request, and run it end‑to‑end in under five minutes. It is designed for first‑time users with no prior knowledge of Synentra.
-
-**Prerequisites**:
-- Docker (v24 or later)
-- curl or a similar HTTP client
-- Basic understanding of REST APIs
+By the end of the guide, you will have a working local Synentra instance that evaluates an agent request before forwarding it to the destination API.
 
 ---
 
-## Step 1: Run Synentra
+## What you will do
+					   
+1. Create a policy that permits read-only requests.
+2. Start Synentra in Docker.
+3. Verify that Synentra and its required services are healthy.
+4. Register an agent and assign the policy to it.
+5. Exchange the agent credentials for a short-lived JWT.
+6. Send a governed request through the Synentra proxy.
+
+---
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- [Docker](https://docs.docker.com/get-docker/) version 24 or later
+- `curl` or another HTTP client
+- A terminal that supports the commands shown below
+- An internet connection for downloading the Synentra container image, the intent model on first use, and the sample upstream response
+- A basic understanding of HTTP and REST APIs
+
+:::note
+The commands use port `7080`. If that port is already occupied, map a different host port, such as `-p 7081:7080`, and use `http://localhost:7081` in the remaining commands.
+:::
+
+---
+
+## 1. Create an intent-aware policy
+
+Create a directory named `policies` in your current working directory:
 
 ```bash
-docker run -d --name synentra -p 7080:7080 ghcr.io/synentra/synentra:latest
+mkdir -p policies
 ```
 
-This starts Synentra with:
-- The Gateway API listening on `http://localhost:7080`
-- An embedded SQLite database (no external database required)
-- The built‑in DistilBERT intent classifier
+Inside that directory, create a file named `order-management.json` with the following content:
 
-> **Expected outcome**: The container starts and Synentra initialises within a few seconds.
+```json
+{
+  "name": "order-management",
+  "default": "Deny",
+  "rules": [
+    {
+      "name": "allow-order-status-queries",
+      "priority": 100,
+      "effect": "Allow",
+      "reason": "Order status queries are permitted",
+      "conditions": [
+        {
+          "field": "intent.label",
+          "operator": "eq",
+          "value": "safe_read"
+        }
+      ]
+    }
+  ]
+}
+```
 
-## Step 2: Verify the Installation
+This policy uses a deny-by-default approach:
 
-Confirm that Synentra is running and healthy:
+- Requests classified with the `safe_read` intent are allowed.
+- Requests that do not match the rule are denied.
+- The rule priority is `100`, which determines its evaluation order relative to other rules in the same policy.
+- The reason is recorded with the decision, making the outcome easier to understand and audit.
+
+:::tip Why use intent instead of only the HTTP method?
+Two requests can use the same HTTP method and path while expressing different goals. Synentra evaluates the semantic intent of the request so that policy decisions can account for what the agent is attempting to do—not only the shape of the HTTP call.
+:::
+
+---
+
+## 2. Start Synentra
+
+Run Synentra and mount the local policy directory into the container:
+
+```bash
+docker run -d \
+  --name synentra \
+  -p 7080:7080 \
+  -v "$(pwd)/policies:/app/policies:ro" \
+  ghcr.io/synentra/synentra:latest
+```
+
+The `:ro` suffix mounts the policy directory as read-only, preventing the container from changing your policy files.
+
+This command starts Synentra with:
+
+- The Gateway API available at `http://localhost:7080`
+- An embedded SQLite database, so no external database is required
+- The built-in DistilBERT-based intent classifier
+- The `order-management` policy loaded from the mounted directory
+
+:::warning First startup can take longer
+On its first run, Synentra may need to download the latest Synentra Intent Community Edition model. Startup time therefore depends on your network speed. Subsequent starts should be faster after the required image and model assets are available locally.
+:::
+
+To watch the startup process, run:
+
+```bash
+docker logs -f synentra
+```
+
+Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop following the logs. This does not stop the container.
+
+---
+
+## 3. Verify the installation
+
+Check the health endpoint before registering an agent:
 
 ```bash
 curl -s http://localhost:7080/health
 ```
 
-A successful response looks like this:
+A healthy instance returns a response similar to:
 
 ```json
 {
@@ -48,39 +136,74 @@ A successful response looks like this:
 }
 ```
 
-## Step 3: Create Your First Agent
+The exact duration will vary. Continue when the reported status is `Healthy`.
 
-Synentra acts as a gateway for your upstream APIs. In this tutorial we use a public test API, but you can replace it with your own service.
+If Synentra is still initializing, wait a few seconds and try again. If it does not become healthy, inspect the logs with `docker logs synentra`.
 
-Register a new agent by sending a `POST` request to the `/agents` endpoint:
+---
+
+## 4. Register your first agent
+
+An agent is the authenticated workload that sends requests through Synentra. Register an agent by sending a `POST` request to the `/agents` endpoint:
 
 ```bash
 curl -X POST "http://localhost:7080/agents" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "billing-agent",
-    "ownerId": "team-finance",
-    "clientSecret": "my-strong-secret"
+    "name": "order-status-agent",
+    "ownerId": "team-commerce",
+    "clientSecret": "replace-with-a-strong-secret"
   }'
 ```
 
-The response will include an `agentId` (a UUID).  
-Copy this value – you will need it in the next step.
+The fields identify and authenticate the workload:
 
-## Step 4: Obtain a Security Token
+- `name` is a human-readable agent name.
+- `ownerId` identifies the team or service responsible for the agent.
+- `clientSecret` is used to obtain an access token.
 
-Agents authenticate using a short‑lived JWT. Exchange the agent credentials for a token:
+The response includes an `agentId` in UUID format. Copy it and refer to it as `<AGENT_ID>` in the remaining steps.
+
+:::caution Protect agent credentials
+The secret above is suitable only as a quickstart placeholder. For real deployments, generate a strong, unique secret, store it in a secret manager, never commit it to source control, and avoid exposing it in shell history or logs.
+:::
+
+---
+
+## 5. Assign the policy to the agent
+
+Associate the `order-management` policy with the newly registered agent:
+
+```bash
+			 
+curl -X PUT "http://localhost:7080/agents/<AGENT_ID>/policy" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "policyName": "order-management"
+  }'
+```
+
+Replace `<AGENT_ID>` with the UUID returned in Step 4.
+
+This assignment tells Synentra to evaluate requests from this agent against the `order-management` policy. Because the policy defaults to `Deny`, only requests that satisfy an explicit allow rule can proceed.
+
+---
+
+## 6. Obtain an access token
+
+Synentra agents authenticate with short-lived JSON Web Tokens (JWTs). Exchange the agent ID and secret for an access token:
 
 ```bash
 curl -X POST "http://localhost:7080/tokens" \
   -H "Content-Type: application/json" \
   -d '{
-    "agentId": "<UUID>",
-    "clientSecret": "my-strong-secret"
+    "agentId": "<AGENT_ID>",
+    "clientSecret": "replace-with-a-strong-secret"
   }'
 ```
 
-Replace `<UUID>` with the `agentId` you received in Step 3.  
+Replace `<AGENT_ID>` with the UUID returned in Step 4. The `clientSecret` must exactly match the value used when the agent was registered.
+
 The response contains an `accessToken`:
 
 ```json
@@ -89,40 +212,159 @@ The response contains an `accessToken`:
 }
 ```
 
-Save this token – you will use it to authorise proxy requests.
+Copy the token and refer to it as `<ACCESS_TOKEN>` in the next step. The token is short-lived; request a new one if it expires.
 
-## Step 5: Send a Proxied Request
+---
 
-Once the agent is registered and you have a token, you can forward requests through Synentra’s `/proxy` endpoint.  
-This example fetches a sample to‑do item from JSONPlaceholder:
+## 7. Send a governed request
+
+Send a request through Synentra's `/proxy` endpoint. This example retrieves a sample to-do item from [JSONPlaceholder](https://jsonplaceholder.typicode.com/), a public test API:
 
 ```bash
-curl -X GET "http://localhost:7080/proxy/https://jsonplaceholder.typicode.com/todos/1" \
-  -H "Synentra-Authorization: Bearer <your-agent-jwt>"
+curl -X GET \
+  "http://localhost:7080/proxy/https://jsonplaceholder.typicode.com/todos/1" \
+  -H "Synentra-Authorization: Bearer <ACCESS_TOKEN>"
 ```
 
-Replace `<your-agent-jwt>` with the `accessToken` from Step 4.  
-If everything works, you will see the JSON response from JSONPlaceholder, passed through Synentra.
+Replace `<ACCESS_TOKEN>` with the JWT returned in Step 6.
 
-## Step 6: Clean Up
+Before forwarding the request, Synentra:
 
-When you are finished, stop and remove the container:
+1. Validates the agent's JWT.
+2. Resolves the registered agent and its assigned policy.
+3. Builds semantic context from the request.
+4. Classifies the request intent.
+5. Evaluates risk, trust, and policy conditions.
+6. Records the decision for auditing.
+7. Forwards the request only when the final decision is `Allow`.
+
+For this read-only request, the classifier should identify a safe read intent and the policy should permit it. A successful proxied response is similar to:
+
+```json
+{
+  "userId": 1,
+  "id": 1,
+  "title": "delectus aut autem",
+  "completed": false
+}
+```
+
+The response originates from the upstream API, but it reaches the agent only after Synentra authorizes the request.
+
+:::note External test service
+JSONPlaceholder is used only to demonstrate proxying. Its availability and response content are outside Synentra's control. In production, replace the example URL with an API you own or trust.
+:::
+
+---
+
+## 8. Clean up
+
+Stop and remove the quickstart container:
 
 ```bash
 docker stop synentra
 docker rm synentra
 ```
 
-All data stored in the embedded SQLite database will be deleted along with the container.
+Because this quickstart does not mount a persistent data volume, the embedded SQLite data is removed with the container. The local `policies/order-management.json` file remains on your machine.
+
+## What you accomplished
+
+You have completed a minimal end-to-end Synentra flow:
+
+```text
+Agent registration → Policy assignment → JWT issuance → Intent classification → Policy decision → Upstream API
+```
+
+You can now replace the public test endpoint with your own upstream API, add more policy rules, and configure production-grade storage, authentication, observability, and secret management.
 
 ---
 
 ## Troubleshooting
 
-### Container fails to start
-Check the container logs:
+### The container does not start
+
+Inspect the container logs:
+
 ```bash
 docker logs synentra
 ```
-Common causes:
-- **Port 7080 already in use** – Either stop the process occupying the port, or map a different host port, e.g. `-p 7081:7080`. Remember to adjust the URLs in the subsequent steps accordingly.
+
+Common causes include:
+
+- **Port `7080` is already in use:** Map a different host port, for example `-p 7081:7080`, and update the remaining URLs.
+- **The container name already exists:** Remove the previous container with `docker rm synentra`, or choose another value for `--name`.
+- **The image cannot be downloaded:** Confirm that Docker can access `ghcr.io` and that your network or proxy configuration permits the download.
+- **The model download fails:** Confirm that the container has outbound network access, then restart it and inspect the logs for the model source and error details.
+
+### The health endpoint is unavailable
+
+Confirm that the container is running:
+
+```bash
+docker ps --filter "name=synentra"
+```
+
+If it has stopped, include stopped containers and inspect its logs:
+
+```bash
+docker ps -a --filter "name=synentra"
+docker logs synentra
+```
+
+If the container is running but still initializing, allow additional time for the first model download.
+
+### The policy is not found
+
+Verify that the policy exists at `policies/order-management.json` in the directory from which you started the container. Then confirm the mount:
+
+```bash
+docker inspect synentra
+```
+
+Also check that the JSON is valid, the policy's `name` is exactly `order-management`, and the assigned `policyName` uses the same spelling and capitalization.
+
+After changing a policy during this quickstart, restart the container so the updated file is loaded:
+
+```bash
+docker restart synentra
+```
+
+### Agent authentication fails
+
+Check that:
+
+- `<AGENT_ID>` is the UUID returned by the registration request.
+- The token request uses the same client secret used during registration.
+- The `Synentra-Authorization` header contains `Bearer`, followed by one space and the complete token.
+- The access token has not expired.
+
+### The proxied request is denied
+
+A denial shows that Synentra evaluated the request but the final decision was not `Allow`. Check the container logs and verify that:
+
+- The agent has the `order-management` policy assigned.
+- The request is classified as `safe_read` with sufficient confidence.
+- The policy was loaded successfully and contains the allow rule.
+- The request method, destination, and content match the operation you intended.
+
+Do not weaken a production policy merely to suppress a denial. Review the decision context and add the narrowest rule that represents the action you intend to permit.
+
+### The upstream API cannot be reached
+
+Test the upstream service directly:
+
+```bash
+curl -s https://jsonplaceholder.typicode.com/todos/1
+```
+
+If the direct request succeeds but the proxied request fails, verify that the Docker container has outbound network access and inspect the Synentra logs.
+
+## Next steps
+
+- Replace JSONPlaceholder with an API in your own environment.
+- Add separate rules for read, write, administrative, and destructive intents.
+- Configure persistent storage before using Synentra beyond local evaluation.
+- Integrate an external identity provider for production authentication.
+- Enable centralized audit logs, metrics, and distributed tracing.
+- Configure human-in-the-loop review for high-impact requests that should not be automatically allowed or denied.
