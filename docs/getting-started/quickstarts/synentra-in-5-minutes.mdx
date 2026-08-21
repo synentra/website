@@ -47,18 +47,18 @@ Create a directory named `policies` in your current working directory:
 mkdir -p policies
 ```
 
-Inside that directory, create a file named `order-management.json` with the following content:
+Inside that directory, create a file named `todo-management.json` with the following content:
 
 ```json
 {
-  "name": "order-management",
+  "name": "todo-management",
   "default": "Deny",
   "rules": [
     {
-      "name": "allow-order-status-queries",
+      "name": "allow-todo-queries",
       "priority": 100,
       "effect": "Allow",
-      "reason": "Order status queries are permitted",
+      "reason": "Todo queries are permitted",
       "conditions": [
         {
           "field": "intent.label",
@@ -103,7 +103,7 @@ This command starts Synentra with:
 - The Gateway API available at `http://localhost:7080`
 - An embedded SQLite database, so no external database is required
 - The built-in DistilBERT-based intent classifier
-- The `order-management` policy loaded from the mounted directory
+- The `todo-management` policy loaded from the mounted directory
 
 :::warning First startup can take longer
 On its first run, Synentra may need to download the latest Synentra Intent Community Edition model. Startup time therefore depends on your network speed. Subsequent starts should be faster after the required image and model assets are available locally.
@@ -150,8 +150,8 @@ An agent is the authenticated workload that sends requests through Synentra. Reg
 curl -X POST "http://localhost:7080/agents" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "order-status-agent",
-    "ownerId": "team-commerce",
+    "name": "todo-agent",
+    "ownerId": "team-productivity",
     "clientSecret": "replace-with-a-strong-secret"
   }'
 ```
@@ -172,20 +172,20 @@ The secret above is suitable only as a quickstart placeholder. For real deployme
 
 ## 5. Assign the policy to the agent
 
-Associate the `order-management` policy with the newly registered agent:
+Associate the `todo-management` policy with the newly registered agent:
 
 ```bash
 			 
 curl -X PUT "http://localhost:7080/agents/<AGENT_ID>/policy" \
   -H "Content-Type: application/json" \
   -d '{
-    "policyName": "order-management"
+    "policyName": "todo-management"
   }'
 ```
 
 Replace `<AGENT_ID>` with the UUID returned in Step 4.
 
-This assignment tells Synentra to evaluate requests from this agent against the `order-management` policy. Because the policy defaults to `Deny`, only requests that satisfy an explicit allow rule can proceed.
+This assignment tells Synentra to evaluate requests from this agent against the `todo-management` policy. Because the policy defaults to `Deny`, only requests that satisfy an explicit allow rule can proceed.
 
 ---
 
@@ -223,6 +223,7 @@ Send a request through Synentra's `/proxy` endpoint. This example retrieves a sa
 ```bash
 curl -X GET \
   "http://localhost:7080/proxy/https://jsonplaceholder.typicode.com/todos/1" \
+  -H "Content-Type: application/json" \
   -H "Synentra-Authorization: Bearer <ACCESS_TOKEN>"
 ```
 
@@ -266,7 +267,7 @@ docker stop synentra
 docker rm synentra
 ```
 
-Because this quickstart does not mount a persistent data volume, the embedded SQLite data is removed with the container. The local `policies/order-management.json` file remains on your machine.
+Because this quickstart does not mount a persistent data volume, the embedded SQLite data is removed with the container. The local `policies/todo-management.json` file remains on your machine.
 
 ## What you accomplished
 
@@ -316,13 +317,13 @@ If the container is running but still initializing, allow additional time for th
 
 ### The policy is not found
 
-Verify that the policy exists at `policies/order-management.json` in the directory from which you started the container. Then confirm the mount:
+Verify that the policy exists at `policies/todo-management.json` in the directory from which you started the container. Then confirm the mount:
 
 ```bash
 docker inspect synentra
 ```
 
-Also check that the JSON is valid, the policy's `name` is exactly `order-management`, and the assigned `policyName` uses the same spelling and capitalization.
+Also check that the JSON is valid, the policy's `name` is exactly `todo-management`, and the assigned `policyName` uses the same spelling and capitalization.
 
 After changing a policy during this quickstart, restart the container so the updated file is loaded:
 
@@ -343,7 +344,7 @@ Check that:
 
 A denial shows that Synentra evaluated the request but the final decision was not `Allow`. Check the container logs and verify that:
 
-- The agent has the `order-management` policy assigned.
+- The agent has the `todo-management` policy assigned.
 - The request is classified as `safe_read` with sufficient confidence.
 - The policy was loaded successfully and contains the allow rule.
 - The request method, destination, and content match the operation you intended.
