@@ -1,0 +1,323 @@
+---
+id: getting-started
+title: Getting Started
+sidebar_label: Getting Started
+sidebar_position: 3
+description: Run Synentra with Docker for local development, custom deployments, Docker Compose environments, and production infrastructure.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Synentra can be deployed directly as a Docker container. It gives you full control over image versions, volumes, networking, and configuration.
+
+This approach is useful for:
+
+* Custom Docker deployments
+* Docker Compose environments
+* Production infrastructure
+* Kubernetes and other container orchestration platforms
+* Environments where deployment is managed independently of the Synentra CLI
+
+---
+
+## Pull the Synentra Image
+
+Synentra container images are published to the GitHub Container Registry (GHCR).
+
+Pull the latest release:
+
+```bash
+docker pull ghcr.io/synentra/synentra:latest
+```
+
+The `latest` tag is published as a multi-architecture image. Docker automatically selects the appropriate image for your platform.
+
+### Supported architectures
+
+| Image                                         | Architecture   |
+| --------------------------------------------- | -------------- |
+| `ghcr.io/synentra/synentra:1.x.x-linux-amd64` | AMD64 / x86-64 |
+| `ghcr.io/synentra/synentra:1.x.x-linux-arm64` | ARM64          |
+
+You can browse published versions and image metadata in the [Synentra container registry](https://github.com/synentra/synentra/pkgs/container/synentra).
+
+By default, the Synentra HTTP gateway listens on:
+
+```text
+7080
+```
+
+---
+
+## Run Synentra
+
+For a minimal local deployment, create directories for persistent data and policies:
+
+```bash
+mkdir -p data policies
+```
+
+Then start Synentra:
+
+```bash
+docker run -d \
+  --name synentra \
+  -p 7080:7080 \
+  -v $(pwd)/data:/data \
+  -v $(pwd)/policies:/policies \
+  -e System__Storage__Database__Providers__Sqlite__ConnectionString="Data Source=/data/synentra.db" \
+  -e Policy__Providers__Internal__Directory="/policies" \
+  ghcr.io/synentra/synentra:latest
+```
+
+This deployment provides:
+
+* A running Synentra gateway
+* Persistent SQLite database storage
+* A mounted policy directory
+* HTTP access through `localhost:7080`
+
+### Verify the container
+
+Check that Synentra is running:
+
+```bash
+docker ps
+```
+
+You should see a container named:
+
+```text
+synentra
+```
+
+You can also inspect the startup logs:
+
+```bash
+docker logs synentra
+```
+
+To follow the logs continuously:
+
+```bash
+docker logs -f synentra
+```
+
+---
+
+## Verify the Gateway
+
+Once the container is running, call the health endpoint:
+
+```bash
+curl http://localhost:7080/health
+```
+
+A healthy instance returns a response similar to:
+
+```json
+{
+  "status": "Healthy",
+  "healthCheckDuration": "00:00:00.0123456"
+}
+```
+
+At this point, the Synentra gateway is running and ready to accept requests.
+
+---
+
+## Persistent Storage
+
+Containers are disposable by design. Data that must survive container recreation should therefore be stored outside the container.
+
+For persistent or production deployments, consider mounting the following paths:
+
+| Container path | Purpose                                  |
+| -------------- | ---------------------------------------- |
+| `/data`        | Database and persistent application data |
+| `/policies`    | Internal policy definitions              |
+| `/app/logs`    | Application log files                    |
+| `/certs`       | TLS certificates                         |
+
+For local development, bind mounts are convenient. For production environments, Docker-managed volumes or infrastructure-managed persistent storage are generally preferable.
+
+For example:
+
+```yaml
+volumes:
+  - ./policies:/policies:ro
+```
+
+---
+
+## Docker Compose
+
+Docker Compose is a convenient option when Synentra is deployed alongside supporting infrastructure such as Redis, Seq, or OPA.
+
+Create a `compose.yaml` file:
+
+```yaml
+services:
+  synentra:
+    image: ghcr.io/synentra/synentra:latest
+    container_name: synentra
+
+    ports:
+      - "7080:7080"
+
+    environment:
+      System__Storage__Database__DefaultProvider: Sqlite
+      System__Storage__Database__Providers__Sqlite__ConnectionString: "Data Source=/data/synentra.db"
+
+      Policy__Enabled: "true"
+      Policy__DefaultProvider: Internal
+      Policy__Providers__Internal__Directory: /policies
+
+    volumes:
+      - synentra-data:/data
+      - ./policies:/policies:ro
+
+    restart: unless-stopped
+
+volumes:
+  synentra-data:
+```
+
+Start the environment:
+
+```bash
+docker compose up -d
+```
+
+Verify its status:
+
+```bash
+docker compose ps
+```
+
+View Synentra logs:
+
+```bash
+docker compose logs -f synentra
+```
+
+Stop the environment:
+
+```bash
+docker compose down
+```
+
+The named `synentra-data` volume remains available after the container is removed, preserving the SQLite database.
+
+To remove the environment **and** its persistent volume:
+
+```bash
+docker compose down -v
+```
+
+---
+
+## Configuration with Environment Variables
+
+Synentra uses the standard ASP.NET Core configuration model.
+
+When configuring Synentra through Docker environment variables, nested configuration sections are separated using double underscores (`__`).
+
+For example:
+
+```text
+System__Server__Http__Port=7080
+```
+
+is equivalent to:
+
+```json
+{
+  "System": {
+    "Server": {
+      "Http": {
+        "Port": 7080
+      }
+    }
+  }
+}
+```
+
+Another example:
+
+```text
+Policy__Providers__Internal__Directory=/policies
+```
+
+maps to:
+
+```json
+{
+  "Policy": {
+    "Providers": {
+      "Internal": {
+        "Directory": "/policies"
+      }
+    }
+  }
+}
+```
+
+For the complete list of available options, see the [Configuration](../../docs/configuration) reference.
+
+---
+
+## Pin a Specific Version
+
+The `latest` tag is convenient for local development and evaluation, but production deployments should normally use an explicit Synentra version.
+
+For example:
+
+```bash
+docker pull ghcr.io/synentra/synentra:1.x.x
+```
+
+Then reference the same version in your deployment:
+
+```yaml
+services:
+  synentra:
+    image: ghcr.io/synentra/synentra:1.x.x
+```
+
+Pinning the image version prevents an unexpected Synentra upgrade when a container is recreated or an image is pulled again.
+
+---
+
+## Upgrade Synentra
+
+When using Docker Compose, upgrade to a newer image by pulling the configured version:
+
+```bash
+docker compose pull
+```
+
+Then recreate the container:
+
+```bash
+docker compose up -d
+```
+
+Because application data is stored in persistent volumes, recreating the Synentra container does not remove the mounted database or policy files.
+
+---
+
+## Next Steps
+
+With Synentra running, you can continue by:
+
+1. Creating or mounting a policy.
+2. Registering an AI agent.
+3. Issuing an agent token.
+4. Sending requests through the Synentra gateway.
+5. Configuring intent classification, risk and trust evaluation, HITL, and observability.
+
+:::info
+For a guided first request, continue with [**Quickstart**](./quickstart).
+:::
