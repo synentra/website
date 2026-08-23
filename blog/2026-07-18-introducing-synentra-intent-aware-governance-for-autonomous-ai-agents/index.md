@@ -258,7 +258,7 @@ Synentra is designed to be immediately testable. Run it locally with a single Do
 docker run --name synentra -p 7080:7080 ghcr.io/synentra/synentra:latest
 ```
 
-For complete Docker initialization instructions, refer to the [Initialize Synentra Docker](../docs/getting-started/initialize-synentra-docker) documentation.
+For complete Docker initialization instructions, refer to the [Get started](../docs/getting-started) documentation.
 
 For **Production mode**, you need to configure security settings correctly and define the `TokenIssuer` configuration to enable Synentra authentication and token issuance. Refer to the [Security Configuration](../docs/configuration/security#token-issuance) documentation for more details.
 
