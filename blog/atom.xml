@@ -2,11 +2,189 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://synentra.io/blog</id>
     <title>Synentra Blog</title>
-    <updated>2026-08-17T00:00:00.000Z</updated>
+    <updated>2026-08-24T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://synentra.io/blog"/>
     <subtitle>Synentra Blog</subtitle>
     <icon>https://synentra.io/img/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[Deep Dive: Agent Identity and Trust Scores]]></title>
+        <id>https://synentra.io/blog/agent-identity-and-trust-scores</id>
+        <link href="https://synentra.io/blog/agent-identity-and-trust-scores"/>
+        <updated>2026-08-24T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[How agent identity, dynamic trust, intent, risk, and deterministic policy can work together to govern autonomous API actions.]]></summary>
+        <content type="html"><![CDATA[<p><img decoding="async" loading="lazy" alt="Agent Identity and Trust Scores" src="https://synentra.io/assets/images/agent-identity-and-trust-scores-a599743f31b76bb99832d2b371cc5e30.png" width="1731" height="909" class="img_ev3q"></p>
+<p>An AI agent presents a valid JWT and asks a billing API to issue a refund. The token is correctly signed, unexpired, and belongs to the expected agent. Is that enough to execute the request?</p>
+<p>No—but not because authentication failed.</p>
+<p>Authentication did its job: it established a verifiable identity for the caller. The remaining questions are different. Is the refund within the agent's assigned policy? Does the request express the intent the endpoint is meant to serve? Is the action unusually risky for this agent? Has the agent recently produced violations or required repeated human intervention? Should the request be allowed, denied, or held for review?</p>
+<p>This distinction becomes important when software can plan and execute multi-step work. A conventional service identity is often attached to predictable code paths. An autonomous agent may select tools, construct payloads, retry, branch, or reinterpret a goal at runtime. Its identity can remain valid while its current action becomes inappropriate.</p>
+<p>Agent governance therefore needs both a stable answer to <strong>who is acting</strong> and changing context about <strong>how this action should be treated now</strong>. In Synentra, agent identity, intent classification, risk scoring, trust scoring, deterministic policy, human-in-the-loop review, and audit records are separate parts of that decision. Keeping those responsibilities separate is the architectural point of this article.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="outline">Outline<a href="https://synentra.io/blog/agent-identity-and-trust-scores#outline" class="hash-link" aria-label="Direct link to Outline" title="Direct link to Outline" translate="no">​</a></h2>
+<ol>
+<li class="">Identity and trust answer different questions</li>
+<li class="">The identity lifecycle of an autonomous agent</li>
+<li class="">What a trust score can—and cannot—represent</li>
+<li class="">Where trust belongs in the decision pipeline</li>
+<li class="">Illustrative policies and scenarios</li>
+<li class="">Consistency, caching, and distributed deployment</li>
+<li class="">Failure modes, trade-offs, and limitations</li>
+<li class="">How Synentra fits with existing gateways and policy engines</li>
+</ol>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="identity-is-a-security-boundary-not-a-behaviour-prediction">Identity is a security boundary, not a behaviour prediction<a href="https://synentra.io/blog/agent-identity-and-trust-scores#identity-is-a-security-boundary-not-a-behaviour-prediction" class="hash-link" aria-label="Direct link to Identity is a security boundary, not a behaviour prediction" title="Direct link to Identity is a security boundary, not a behaviour prediction" translate="no">​</a></h2>
+<p>Agent identity should be boring in the best possible way. A registered agent receives a unique identity and authenticates with a credential. Synentra supports JWT-based agent authentication, and each request is associated with the agent that initiated it. That identity becomes the durable reference used by policies, rate limits, trust state, and audit events.</p>
+<p>The identity layer answers questions such as:</p>
+<ul>
+<li class="">Which agent sent this request?</li>
+<li class="">Is the credential valid for that agent?</li>
+<li class="">Is the agent active, disabled, or quarantined?</li>
+<li class="">Which owner and policy are associated with it?</li>
+<li class="">Which audit history belongs to this caller?</li>
+</ul>
+<p>It should not attempt to answer whether a particular payload is safe. A valid credential proves possession of the credential under the configured authentication model. It does not prove that the agent's plan is correct, that its tool selection is appropriate, or that a generated request matches the user's authority.</p>
+<p>This is the same reason zero-trust designs do not interpret one successful authentication event as permanent authorization. The caller is authenticated, then each requested action is evaluated in context.</p>
+<p>For AI agents, that context can include semantic intent and behavioural history in addition to familiar attributes such as method, path, time, and assigned policy.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="a-practical-agent-identity-lifecycle">A practical agent identity lifecycle<a href="https://synentra.io/blog/agent-identity-and-trust-scores#a-practical-agent-identity-lifecycle" class="hash-link" aria-label="Direct link to A practical agent identity lifecycle" title="Direct link to A practical agent identity lifecycle" translate="no">​</a></h2>
+<p>A useful identity design begins before the first proxied request.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="1-registration">1. Registration<a href="https://synentra.io/blog/agent-identity-and-trust-scores#1-registration" class="hash-link" aria-label="Direct link to 1. Registration" title="Direct link to 1. Registration" translate="no">​</a></h3>
+<p>The agent is registered as its own security principal instead of sharing a generic application identity with every other agent. In Synentra, an agent record includes a unique ID, name, owner, lifecycle status, assigned policy, and trust score. The registration API accepts an agent name, owner identifier, and client secret.</p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">curl -X POST "http://localhost:7080/agents" \</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  -H "Content-Type: application/json" \</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  -d '{</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">    "name": "billing-agent",</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">    "ownerId": "team-finance",</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">    "clientSecret": "replace-with-a-strong-secret"</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  }'</span><br></div></code></pre></div></div>
+<p>The secret is sensitive and should be handled through the deployment's secret-management process. It is an authentication credential, not a descriptive property of the agent.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="2-policy-assignment">2. Policy assignment<a href="https://synentra.io/blog/agent-identity-and-trust-scores#2-policy-assignment" class="hash-link" aria-label="Direct link to 2. Policy assignment" title="Direct link to 2. Policy assignment" translate="no">​</a></h3>
+<p>Identity becomes useful to authorization when the agent is associated with a policy. A billing agent and a documentation agent may call the same gateway, but their permitted actions should not be inferred from their names. The policy assignment is the explicit control.</p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">curl -X PUT "http://localhost:7080/agents/&lt;agent-id&gt;/policy" \</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  -H "Content-Type: application/json" \</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  -d '{ "policyName": "billing-policy" }'</span><br></div></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="3-short-lived-authentication">3. Short-lived authentication<a href="https://synentra.io/blog/agent-identity-and-trust-scores#3-short-lived-authentication" class="hash-link" aria-label="Direct link to 3. Short-lived authentication" title="Direct link to 3. Short-lived authentication" translate="no">​</a></h3>
+<p>The agent obtains a JWT and presents it to Synentra. Short-lived tokens reduce the usefulness of a leaked token, but token lifetime alone does not solve revocation, quarantine, or behavioural risk. Those remain runtime concerns.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="4-per-request-evaluation">4. Per-request evaluation<a href="https://synentra.io/blog/agent-identity-and-trust-scores#4-per-request-evaluation" class="hash-link" aria-label="Direct link to 4. Per-request evaluation" title="Direct link to 4. Per-request evaluation" translate="no">​</a></h3>
+<p>Every request is evaluated using the authenticated agent identity plus request context. Synentra can classify intent locally with ONNX, calculate risk, evaluate policy, and produce an allow, deny, or review outcome.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="5-audit-and-lifecycle-action">5. Audit and lifecycle action<a href="https://synentra.io/blog/agent-identity-and-trust-scores#5-audit-and-lifecycle-action" class="hash-link" aria-label="Direct link to 5. Audit and lifecycle action" title="Direct link to 5. Audit and lifecycle action" translate="no">​</a></h3>
+<p>The decision is recorded with the agent identity. Repeated violations or other configured conditions may contribute to a lower trust posture. Synentra also supports quarantine so an agent can be isolated, and its API includes an operation to lift quarantine after investigation.</p>
+<p>This lifecycle matters because an agent is not just a JWT subject. It is a governed principal with ownership, policy, history, state, and an audit trail.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="trust-is-a-changing-signal">Trust is a changing signal<a href="https://synentra.io/blog/agent-identity-and-trust-scores#trust-is-a-changing-signal" class="hash-link" aria-label="Direct link to Trust is a changing signal" title="Direct link to Trust is a changing signal" translate="no">​</a></h2>
+<p>Identity should be stable enough to correlate actions. Trust is intentionally dynamic.</p>
+<p>Synentra represents agent trust as a score from <code>0.0</code> to <code>1.0</code>. The product architecture uses behaviour-related information such as policy violations, approval history, and request behaviour to update that posture over time. Low trust can lead to stricter treatment, including increased risk, human review, rate limiting, or quarantine according to configuration and policy.</p>
+<p>The score should be interpreted as a compact input to a broader decision—not as a mathematical declaration that an agent is “70% safe.” A value such as <code>0.70</code> has meaning only relative to:</p>
+<ul>
+<li class="">the signals included in the scoring model;</li>
+<li class="">the update and recovery rules;</li>
+<li class="">the time window or history considered;</li>
+<li class="">the policy thresholds applied to it;</li>
+<li class="">the action being requested; and</li>
+<li class="">the consequences of a false positive or false negative.</li>
+</ul>
+<p>That last point is critical. The same trust score may justify different outcomes for two requests. A low-impact read could remain eligible for automatic execution while a destructive change is sent to review. Trust modifies context; it does not erase the nature of the action.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="keep-identity-intent-risk-trust-and-policy-separate">Keep identity, intent, risk, trust, and policy separate<a href="https://synentra.io/blog/agent-identity-and-trust-scores#keep-identity-intent-risk-trust-and-policy-separate" class="hash-link" aria-label="Direct link to Keep identity, intent, risk, trust, and policy separate" title="Direct link to Keep identity, intent, risk, trust, and policy separate" translate="no">​</a></h2>
+<p>These concepts are related, but merging them creates an opaque authorization system.</p>
+<table><thead><tr><th>Signal</th><th>Question answered</th><th>Typical characteristics</th></tr></thead><tbody><tr><td>Identity</td><td>Who is making the request?</td><td>Stable, cryptographically authenticated</td></tr><tr><td>Intent</td><td>What is the request trying to accomplish?</td><td>Semantic, confidence-bearing</td></tr><tr><td>Trust</td><td>How should this agent's history affect treatment?</td><td>Dynamic, agent-specific</td></tr><tr><td>Risk</td><td>How dangerous is this request in its current context?</td><td>Request-specific, contextual</td></tr><tr><td>Policy</td><td>What outcome is permitted under explicit rules?</td><td>Deterministic and reviewable</td></tr></tbody></table>
+<p>An intent classifier may identify <code>destructive_delete</code>, but it should not own the final authorization decision. A risk engine may calculate a high score, but it should not silently redefine the agent's identity. A trust score may decline, but the reason and resulting threshold should remain observable. Policy brings these signals together through rules that security and platform teams can inspect.</p>
+<!-- -->
+<p>This separation creates several advantages:</p>
+<ol>
+<li class=""><strong>Auditability:</strong> an operator can see which signal changed the outcome.</li>
+<li class=""><strong>Testability:</strong> classification, scoring, and policy can be tested independently.</li>
+<li class=""><strong>Failure handling:</strong> low confidence or unavailable dependencies can map to explicit fallback behaviour.</li>
+<li class=""><strong>Governance:</strong> deterministic policy remains the place where organisational rules are expressed.</li>
+</ol>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="an-illustrative-policy-boundary">An illustrative policy boundary<a href="https://synentra.io/blog/agent-identity-and-trust-scores#an-illustrative-policy-boundary" class="hash-link" aria-label="Direct link to An illustrative policy boundary" title="Direct link to An illustrative policy boundary" translate="no">​</a></h2>
+<p>The following Rego fragment is an <strong>illustrative example</strong>, not a claim about a bundled production policy. It demonstrates how intent and trust might enter a deterministic decision without allowing either signal to act alone.</p>
+<div class="language-rego codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-rego codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">package agent_governance</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">default decision := "deny"</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">decision := "allow" if {</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.agent.status == "Active"</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.agent.trustScore &gt;= 0.70</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.intent.name == "safe_read"</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.request.method == "GET"</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">}</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">decision := "review" if {</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.agent.status == "Active"</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.intent.name == "destructive_delete"</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.agent.trustScore &gt;= 0.50</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">}</span><br></div></code></pre></div></div>
+<p>The policy expresses three useful ideas:</p>
+<ul>
+<li class="">an active identity is necessary;</li>
+<li class="">a benign intent still needs method and trust constraints; and</li>
+<li class="">a conditionally valid destructive action can be reviewed instead of automatically allowed.</li>
+</ul>
+<p>A production policy would also need to define missing attributes, classification confidence, data sensitivity, ownership, environment, and explicit deny conditions. The exact input schema should match the Synentra policy provider and version used in the deployment.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="three-illustrative-scenarios">Three illustrative scenarios<a href="https://synentra.io/blog/agent-identity-and-trust-scores#three-illustrative-scenarios" class="hash-link" aria-label="Direct link to Three illustrative scenarios" title="Direct link to Three illustrative scenarios" translate="no">​</a></h2>
+<p>The following scenarios are architectural examples. They are not customer stories or measured production results.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="scenario-a-valid-identity-ordinary-read">Scenario A: valid identity, ordinary read<a href="https://synentra.io/blog/agent-identity-and-trust-scores#scenario-a-valid-identity-ordinary-read" class="hash-link" aria-label="Direct link to Scenario A: valid identity, ordinary read" title="Direct link to Scenario A: valid identity, ordinary read" translate="no">​</a></h3>
+<p>An inventory agent with an active identity requests <code>GET /v1/products/42</code>. The intent is classified as <code>safe_read</code>; the request matches its assigned policy; risk is low; and the trust score is above the policy threshold.</p>
+<p>The policy can allow the request and record the evidence used. Trust contributes to the decision, but the allow outcome also depends on identity, intent, method, path, and policy.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="scenario-b-valid-identity-unusual-destructive-action">Scenario B: valid identity, unusual destructive action<a href="https://synentra.io/blog/agent-identity-and-trust-scores#scenario-b-valid-identity-unusual-destructive-action" class="hash-link" aria-label="Direct link to Scenario B: valid identity, unusual destructive action" title="Direct link to Scenario B: valid identity, unusual destructive action" translate="no">​</a></h3>
+<p>The same agent submits <code>DELETE /v1/products/42</code>. Its JWT is still valid, but the action differs materially from its normal scope. A <code>destructive_delete</code> intent and elevated contextual risk can produce a denial or review even if the agent previously behaved well.</p>
+<p>This is why “trusted agent” must never mean “unrestricted agent.” Historical behaviour is not authorization for a new class of action.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="scenario-c-degrading-trust-after-repeated-intervention">Scenario C: degrading trust after repeated intervention<a href="https://synentra.io/blog/agent-identity-and-trust-scores#scenario-c-degrading-trust-after-repeated-intervention" class="hash-link" aria-label="Direct link to Scenario C: degrading trust after repeated intervention" title="Direct link to Scenario C: degrading trust after repeated intervention" translate="no">​</a></h3>
+<p>An operations agent repeatedly produces requests that require human review, and reviewers deny several of them. If approval history is configured as a trust signal, the agent's trust posture may decline. Policy can then apply tighter limits or route more requests to review. At a configured boundary, quarantine can isolate the agent pending investigation.</p>
+<p>The engineering challenge is recovery. If trust only decreases, a temporary model or configuration fault can permanently punish the principal. A defensible design needs explicit recovery, operator override, or time-based decay rules—and an audit trail explaining each change.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="trust-and-risk-should-not-become-the-same-number">Trust and risk should not become the same number<a href="https://synentra.io/blog/agent-identity-and-trust-scores#trust-and-risk-should-not-become-the-same-number" class="hash-link" aria-label="Direct link to Trust and risk should not become the same number" title="Direct link to Trust and risk should not become the same number" translate="no">​</a></h2>
+<p>It is tempting to collapse every uncertain signal into one score. That simplifies a dashboard but weakens reasoning.</p>
+<p>Trust is primarily about the agent's accumulated posture. Risk is about the current request. An established agent can make a high-risk request; a new or low-trust agent can make a low-impact request. Keeping them separate allows policy to express combinations such as:</p>
+<ul>
+<li class="">allow low-risk reads for an active agent;</li>
+<li class="">review high-impact writes when trust is moderate;</li>
+<li class="">deny prohibited intents regardless of trust;</li>
+<li class="">apply stricter rate limits to low-trust agents; or</li>
+<li class="">quarantine an agent when configured behavioural conditions are met.</li>
+</ul>
+<p>The policy should also define precedence. A high trust score must not override a hard deny. A low risk score must not reactivate a quarantined identity. A classifier's confidence must not be mistaken for the probability that an action is authorised.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="distributed-consistency-and-the-role-of-redis">Distributed consistency and the role of Redis<a href="https://synentra.io/blog/agent-identity-and-trust-scores#distributed-consistency-and-the-role-of-redis" class="hash-link" aria-label="Direct link to Distributed consistency and the role of Redis" title="Direct link to Distributed consistency and the role of Redis" translate="no">​</a></h2>
+<p>Trust state and session-related data become operational concerns when more than one gateway instance processes requests.</p>
+<p>An in-memory cache is simple for a single instance, but each replica has its own view. If trust, session, policy, or rate-limit data is cached independently, replicas can temporarily make decisions using different state. Redis provides a shared cache provider in Synentra and can reduce that divergence for supported cached data.</p>
+<p>That does not make Redis a system of record for every security fact, nor does it remove distributed-systems trade-offs. Architects still need to decide:</p>
+<ul>
+<li class="">which data is authoritative and which is cached;</li>
+<li class="">cache time-to-live and invalidation behaviour;</li>
+<li class="">what happens when Redis is unavailable;</li>
+<li class="">whether a stale trust value may allow a sensitive action;</li>
+<li class="">how rate limits behave across replicas; and</li>
+<li class="">how cache credentials, transport security, persistence, and network access are configured.</li>
+</ul>
+<p>For a security-sensitive decision, failure behaviour should be intentional. Failing closed can protect an API but reduce availability. Failing open can preserve availability but accept stale or missing governance state. A third option is degraded mode: permit a narrow set of low-impact operations while denying or reviewing sensitive ones. The appropriate choice depends on the action and threat model.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="observability-explain-the-decision-not-just-the-score">Observability: explain the decision, not just the score<a href="https://synentra.io/blog/agent-identity-and-trust-scores#observability-explain-the-decision-not-just-the-score" class="hash-link" aria-label="Direct link to Observability: explain the decision, not just the score" title="Direct link to Observability: explain the decision, not just the score" translate="no">​</a></h2>
+<p>A score without provenance is difficult to operate. Synentra records decision context in its audit trail and exposes structured logs and OpenTelemetry signals. For identity and trust, useful operational questions include:</p>
+<ul>
+<li class="">Which agent made the request?</li>
+<li class="">What was its lifecycle status and assigned policy?</li>
+<li class="">What trust value was used for the decision?</li>
+<li class="">Which intent and confidence were produced?</li>
+<li class="">Which risk factors contributed?</li>
+<li class="">Which policy rule produced allow, deny, or review?</li>
+<li class="">Did a human approve or deny the held request?</li>
+<li class="">Did the agent's trust posture change afterward?</li>
+</ul>
+<p>Not every signal should become a high-cardinality metric label. Agent IDs and request IDs are often better suited to traces and logs than global metric dimensions. Metrics can track aggregate decision counts and latency, while traces and audit records carry per-request detail.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="trade-offs-and-limitations">Trade-offs and limitations<a href="https://synentra.io/blog/agent-identity-and-trust-scores#trade-offs-and-limitations" class="hash-link" aria-label="Direct link to Trade-offs and limitations" title="Direct link to Trade-offs and limitations" translate="no">​</a></h2>
+<p>Trust scoring adds useful context, but it also introduces design risk.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="cold-start">Cold start<a href="https://synentra.io/blog/agent-identity-and-trust-scores#cold-start" class="hash-link" aria-label="Direct link to Cold start" title="Direct link to Cold start" translate="no">​</a></h3>
+<p>A new agent has little or no behavioural history. Assigning high trust by default creates exposure; assigning low trust can make onboarding unusable. A conservative baseline with narrow policy permissions is usually easier to reason about than trying to solve cold start with the score alone.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="feedback-loops">Feedback loops<a href="https://synentra.io/blog/agent-identity-and-trust-scores#feedback-loops" class="hash-link" aria-label="Direct link to Feedback loops" title="Direct link to Feedback loops" translate="no">​</a></h3>
+<p>If review outcomes affect trust and low trust causes more reviews, a feedback loop can trap an agent in a degraded state. Recovery rules and operator visibility are necessary.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="shared-identity">Shared identity<a href="https://synentra.io/blog/agent-identity-and-trust-scores#shared-identity" class="hash-link" aria-label="Direct link to Shared identity" title="Direct link to Shared identity" translate="no">​</a></h3>
+<p>If multiple independent agents share one identity, their histories become indistinguishable. One agent's violations can affect every workload using that credential. Unique identities improve attribution and containment.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="compromised-but-historically-trusted-agents">Compromised but historically trusted agents<a href="https://synentra.io/blog/agent-identity-and-trust-scores#compromised-but-historically-trusted-agents" class="hash-link" aria-label="Direct link to Compromised but historically trusted agents" title="Direct link to Compromised but historically trusted agents" translate="no">​</a></h3>
+<p>Good history does not protect against credential theft, prompt injection, a malicious tool response, or a newly introduced bug. Current request intent, risk, and policy must still constrain the action.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="score-gaming-and-incomplete-signals">Score gaming and incomplete signals<a href="https://synentra.io/blog/agent-identity-and-trust-scores#score-gaming-and-incomplete-signals" class="hash-link" aria-label="Direct link to Score gaming and incomplete signals" title="Direct link to Score gaming and incomplete signals" translate="no">​</a></h3>
+<p>Any scoring system reflects the evidence it observes. An agent may perform many harmless operations before attempting a damaging one, or harmful behaviour may occur outside the gateway. Trust must remain bounded by explicit authorization.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="probabilistic-inputs">Probabilistic inputs<a href="https://synentra.io/blog/agent-identity-and-trust-scores#probabilistic-inputs" class="hash-link" aria-label="Direct link to Probabilistic inputs" title="Direct link to Probabilistic inputs" translate="no">​</a></h3>
+<p>Intent classification and anomaly-related signals can be uncertain. Low confidence needs an explicit outcome such as review or deny; silently converting uncertainty into allow is a policy decision whether or not it is documented.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="privacy-and-retention">Privacy and retention<a href="https://synentra.io/blog/agent-identity-and-trust-scores#privacy-and-retention" class="hash-link" aria-label="Direct link to Privacy and retention" title="Direct link to Privacy and retention" translate="no">​</a></h3>
+<p>Behavioural history and request payloads can contain sensitive information. Audit detail, retention, access control, and redaction need to be designed for the organisation's requirements. “Log everything” is not automatically a safe compliance strategy.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="where-synentra-fits-with-existing-infrastructure">Where Synentra fits with existing infrastructure<a href="https://synentra.io/blog/agent-identity-and-trust-scores#where-synentra-fits-with-existing-infrastructure" class="hash-link" aria-label="Direct link to Where Synentra fits with existing infrastructure" title="Direct link to Where Synentra fits with existing infrastructure" translate="no">​</a></h2>
+<p>Traditional API gateways, reverse proxies, cloud API-management products, and service meshes solve important routing, authentication, throttling, and service-to-service concerns. OPA provides a general-purpose policy engine for fine-grained decisions. Synentra is focused on the agent-to-API governance layer: agent identity, semantic intent, contextual risk, trust posture, deterministic policy, human review, and audit.</p>
+<p>These layers can be complementary. An organisation may keep its existing ingress gateway or service mesh and place Synentra on the path used by autonomous agents. OPA can remain the deterministic policy engine while Synentra supplies agent-specific decision context. The architectural question is not “Which tool replaces every other tool?” It is “Where should each security responsibility live, and how are failures handled between layers?”</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="design-checklist">Design checklist<a href="https://synentra.io/blog/agent-identity-and-trust-scores#design-checklist" class="hash-link" aria-label="Direct link to Design checklist" title="Direct link to Design checklist" translate="no">​</a></h2>
+<p>Before using trust as an authorization signal, answer these questions:</p>
+<ol>
+<li class="">Does every independently governed agent have a unique identity?</li>
+<li class="">Who owns each identity and can rotate or revoke its credential?</li>
+<li class="">Which events change trust, and are those changes auditable?</li>
+<li class="">Can a high trust score ever override an explicit deny? It should not.</li>
+<li class="">What is the initial posture for a new agent?</li>
+<li class="">How does trust recover after a false positive or temporary failure?</li>
+<li class="">What happens when the trust store or cache is unavailable?</li>
+<li class="">Which actions are allowed, reviewed, or denied at each threshold?</li>
+<li class="">How are classifier confidence and missing context handled?</li>
+<li class="">Can operators explain a decision without reverse-engineering one composite score?</li>
+</ol>
+<p>Identity and trust are most useful when they remain constrained, observable inputs to policy. Authentication establishes the principal. Trust adds history. Intent describes purpose. Risk describes the current action. Deterministic policy decides how those signals translate into an outcome.</p>]]></content>
+        <author>
+            <name>Maintainers</name>
+        </author>
+        <category label="Ai-Agent-Governance" term="Ai-Agent-Governance"/>
+        <category label="Agent-Identity" term="Agent-Identity"/>
+        <category label="Trust-Scoring" term="Trust-Scoring"/>
+        <category label="Zero-Trust" term="Zero-Trust"/>
+        <category label="Authorization" term="Authorization"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Zero Trust for AI Agents: Authentication Is Necessary, Not Sufficient]]></title>
         <id>https://synentra.io/blog/zero-trust-ai-agents-authentication-authorization</id>
@@ -1044,7 +1222,7 @@ Context
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="getting-started-in-minutes">Getting Started in Minutes<a href="https://synentra.io/blog/introducing-synentra-intent-aware-governance-for-autonomous-ai-agents#getting-started-in-minutes" class="hash-link" aria-label="Direct link to Getting Started in Minutes" title="Direct link to Getting Started in Minutes" translate="no">​</a></h2>
 <p>Synentra is designed to be immediately testable. Run it locally with a single Docker command:</p>
 <div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">docker run --name synentra -p 7080:7080 ghcr.io/synentra/synentra:latest</span><br></div></code></pre></div></div>
-<p>For complete Docker initialization instructions, refer to the <a class="" href="https://synentra.io/docs/getting-started/initialize-synentra-docker">Initialize Synentra Docker</a> documentation.</p>
+<p>For complete Docker initialization instructions, refer to the <a class="" href="https://synentra.io/docs/getting-started">Get started</a> documentation.</p>
 <p>For <strong>Production mode</strong>, you need to configure security settings correctly and define the <code>TokenIssuer</code> configuration to enable Synentra authentication and token issuance. Refer to the <a class="" href="https://synentra.io/docs/configuration/security#token-issuance">Security Configuration</a> documentation for more details.</p>
 <hr>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="join-the-community">Join the Community<a href="https://synentra.io/blog/introducing-synentra-intent-aware-governance-for-autonomous-ai-agents#join-the-community" class="hash-link" aria-label="Direct link to Join the Community" title="Direct link to Join the Community" translate="no">​</a></h2>
