@@ -73,7 +73,7 @@ export default function InstallationBox() {
               language="bash"
             />
             <div className={styles.docsLink}>
-              <Link to="/docs/getting-started/initialize-synentra-docker">
+              <Link to="/docs/getting-started">
                 Docker deployment guide <span className={styles.arrow}>→</span>
               </Link>
             </div>
