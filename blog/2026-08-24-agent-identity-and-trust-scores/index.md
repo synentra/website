@@ -228,8 +228,6 @@ That does not make Redis a system of record for every security fact, nor does it
 
 For a security-sensitive decision, failure behaviour should be intentional. Failing closed can protect an API but reduce availability. Failing open can preserve availability but accept stale or missing governance state. A third option is degraded mode: permit a narrow set of low-impact operations while denying or reviewing sensitive ones. The appropriate choice depends on the action and threat model.
 
-The companion tutorial, [Using Redis for Session Caching](/blog/using-redis-for-session-caching), shows the documented Docker configuration for selecting Synentra's Redis cache provider.
-
 ## Observability: explain the decision, not just the score
 
 A score without provenance is difficult to operate. Synentra records decision context in its audit trail and exposes structured logs and OpenTelemetry signals. For identity and trust, useful operational questions include:
