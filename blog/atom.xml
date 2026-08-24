@@ -116,19 +116,6 @@
 <li class="">quarantine an agent when configured behavioural conditions are met.</li>
 </ul>
 <p>The policy should also define precedence. A high trust score must not override a hard deny. A low risk score must not reactivate a quarantined identity. A classifier's confidence must not be mistaken for the probability that an action is authorised.</p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="distributed-consistency-and-the-role-of-redis">Distributed consistency and the role of Redis<a href="https://synentra.io/blog/agent-identity-and-trust-scores#distributed-consistency-and-the-role-of-redis" class="hash-link" aria-label="Direct link to Distributed consistency and the role of Redis" title="Direct link to Distributed consistency and the role of Redis" translate="no">​</a></h2>
-<p>Trust state and session-related data become operational concerns when more than one gateway instance processes requests.</p>
-<p>An in-memory cache is simple for a single instance, but each replica has its own view. If trust, session, policy, or rate-limit data is cached independently, replicas can temporarily make decisions using different state. Redis provides a shared cache provider in Synentra and can reduce that divergence for supported cached data.</p>
-<p>That does not make Redis a system of record for every security fact, nor does it remove distributed-systems trade-offs. Architects still need to decide:</p>
-<ul>
-<li class="">which data is authoritative and which is cached;</li>
-<li class="">cache time-to-live and invalidation behaviour;</li>
-<li class="">what happens when Redis is unavailable;</li>
-<li class="">whether a stale trust value may allow a sensitive action;</li>
-<li class="">how rate limits behave across replicas; and</li>
-<li class="">how cache credentials, transport security, persistence, and network access are configured.</li>
-</ul>
-<p>For a security-sensitive decision, failure behaviour should be intentional. Failing closed can protect an API but reduce availability. Failing open can preserve availability but accept stale or missing governance state. A third option is degraded mode: permit a narrow set of low-impact operations while denying or reviewing sensitive ones. The appropriate choice depends on the action and threat model.</p>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="observability-explain-the-decision-not-just-the-score">Observability: explain the decision, not just the score<a href="https://synentra.io/blog/agent-identity-and-trust-scores#observability-explain-the-decision-not-just-the-score" class="hash-link" aria-label="Direct link to Observability: explain the decision, not just the score" title="Direct link to Observability: explain the decision, not just the score" translate="no">​</a></h2>
 <p>A score without provenance is difficult to operate. Synentra records decision context in its audit trail and exposes structured logs and OpenTelemetry signals. For identity and trust, useful operational questions include:</p>
 <ul>
@@ -160,22 +147,7 @@
 <p>Behavioural history and request payloads can contain sensitive information. Audit detail, retention, access control, and redaction need to be designed for the organisation's requirements. “Log everything” is not automatically a safe compliance strategy.</p>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="where-synentra-fits-with-existing-infrastructure">Where Synentra fits with existing infrastructure<a href="https://synentra.io/blog/agent-identity-and-trust-scores#where-synentra-fits-with-existing-infrastructure" class="hash-link" aria-label="Direct link to Where Synentra fits with existing infrastructure" title="Direct link to Where Synentra fits with existing infrastructure" translate="no">​</a></h2>
 <p>Traditional API gateways, reverse proxies, cloud API-management products, and service meshes solve important routing, authentication, throttling, and service-to-service concerns. OPA provides a general-purpose policy engine for fine-grained decisions. Synentra is focused on the agent-to-API governance layer: agent identity, semantic intent, contextual risk, trust posture, deterministic policy, human review, and audit.</p>
-<p>These layers can be complementary. An organisation may keep its existing ingress gateway or service mesh and place Synentra on the path used by autonomous agents. OPA can remain the deterministic policy engine while Synentra supplies agent-specific decision context. The architectural question is not “Which tool replaces every other tool?” It is “Where should each security responsibility live, and how are failures handled between layers?”</p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="design-checklist">Design checklist<a href="https://synentra.io/blog/agent-identity-and-trust-scores#design-checklist" class="hash-link" aria-label="Direct link to Design checklist" title="Direct link to Design checklist" translate="no">​</a></h2>
-<p>Before using trust as an authorization signal, answer these questions:</p>
-<ol>
-<li class="">Does every independently governed agent have a unique identity?</li>
-<li class="">Who owns each identity and can rotate or revoke its credential?</li>
-<li class="">Which events change trust, and are those changes auditable?</li>
-<li class="">Can a high trust score ever override an explicit deny? It should not.</li>
-<li class="">What is the initial posture for a new agent?</li>
-<li class="">How does trust recover after a false positive or temporary failure?</li>
-<li class="">What happens when the trust store or cache is unavailable?</li>
-<li class="">Which actions are allowed, reviewed, or denied at each threshold?</li>
-<li class="">How are classifier confidence and missing context handled?</li>
-<li class="">Can operators explain a decision without reverse-engineering one composite score?</li>
-</ol>
-<p>Identity and trust are most useful when they remain constrained, observable inputs to policy. Authentication establishes the principal. Trust adds history. Intent describes purpose. Risk describes the current action. Deterministic policy decides how those signals translate into an outcome.</p>]]></content>
+<p>These layers can be complementary. An organisation may keep its existing ingress gateway or service mesh and place Synentra on the path used by autonomous agents. OPA can remain the deterministic policy engine while Synentra supplies agent-specific decision context. The architectural question is not “Which tool replaces every other tool?” It is “Where should each security responsibility live, and how are failures handled between layers?”</p>]]></content>
         <author>
             <name>Maintainers</name>
         </author>
