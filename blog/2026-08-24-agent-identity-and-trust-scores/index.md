@@ -211,23 +211,6 @@ Trust is primarily about the agent's accumulated posture. Risk is about the curr
 
 The policy should also define precedence. A high trust score must not override a hard deny. A low risk score must not reactivate a quarantined identity. A classifier's confidence must not be mistaken for the probability that an action is authorised.
 
-## Distributed consistency and the role of Redis
-
-Trust state and session-related data become operational concerns when more than one gateway instance processes requests.
-
-An in-memory cache is simple for a single instance, but each replica has its own view. If trust, session, policy, or rate-limit data is cached independently, replicas can temporarily make decisions using different state. Redis provides a shared cache provider in Synentra and can reduce that divergence for supported cached data.
-
-That does not make Redis a system of record for every security fact, nor does it remove distributed-systems trade-offs. Architects still need to decide:
-
-- which data is authoritative and which is cached;
-- cache time-to-live and invalidation behaviour;
-- what happens when Redis is unavailable;
-- whether a stale trust value may allow a sensitive action;
-- how rate limits behave across replicas; and
-- how cache credentials, transport security, persistence, and network access are configured.
-
-For a security-sensitive decision, failure behaviour should be intentional. Failing closed can protect an API but reduce availability. Failing open can preserve availability but accept stale or missing governance state. A third option is degraded mode: permit a narrow set of low-impact operations while denying or reviewing sensitive ones. The appropriate choice depends on the action and threat model.
-
 ## Observability: explain the decision, not just the score
 
 A score without provenance is difficult to operate. Synentra records decision context in its audit trail and exposes structured logs and OpenTelemetry signals. For identity and trust, useful operational questions include:
@@ -280,20 +263,3 @@ Behavioural history and request payloads can contain sensitive information. Audi
 Traditional API gateways, reverse proxies, cloud API-management products, and service meshes solve important routing, authentication, throttling, and service-to-service concerns. OPA provides a general-purpose policy engine for fine-grained decisions. Synentra is focused on the agent-to-API governance layer: agent identity, semantic intent, contextual risk, trust posture, deterministic policy, human review, and audit.
 
 These layers can be complementary. An organisation may keep its existing ingress gateway or service mesh and place Synentra on the path used by autonomous agents. OPA can remain the deterministic policy engine while Synentra supplies agent-specific decision context. The architectural question is not “Which tool replaces every other tool?” It is “Where should each security responsibility live, and how are failures handled between layers?”
-
-## Design checklist
-
-Before using trust as an authorization signal, answer these questions:
-
-1. Does every independently governed agent have a unique identity?
-2. Who owns each identity and can rotate or revoke its credential?
-3. Which events change trust, and are those changes auditable?
-4. Can a high trust score ever override an explicit deny? It should not.
-5. What is the initial posture for a new agent?
-6. How does trust recover after a false positive or temporary failure?
-7. What happens when the trust store or cache is unavailable?
-8. Which actions are allowed, reviewed, or denied at each threshold?
-9. How are classifier confidence and missing context handled?
-10. Can operators explain a decision without reverse-engineering one composite score?
-
-Identity and trust are most useful when they remain constrained, observable inputs to policy. Authentication establishes the principal. Trust adds history. Intent describes purpose. Risk describes the current action. Deterministic policy decides how those signals translate into an outcome.
