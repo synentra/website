@@ -50,7 +50,7 @@ const config: Config = {
     [
       '@docusaurus/plugin-google-gtag',
       {
-        trackingID: 'G-GCMLPCF6KH',
+        trackingID: 'G-XD4R0EG3EP',
         anonymizeIP: true,
       },
     ],
