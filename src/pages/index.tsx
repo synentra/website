@@ -197,6 +197,11 @@ function HomepageHeader(): JSX.Element {
               <GitHubIcon />
               View on GitHub
             </Link>
+
+            <p className={styles.description}>Interested in trying Synentra with a real AI agent?
+              <br />
+              <Link to="/design-partners">Become a Design Partner →</Link>
+            </p>
           </div>
 
           <div className={styles.proof}>

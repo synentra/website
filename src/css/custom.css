@@ -77,7 +77,7 @@ html[data-theme='dark'] {
   border-top: 1px solid var(--ifm-toc-border-color) !important;
   box-shadow: none !important;
   padding-top: 2rem;          /* Optional: space between border and content */
-  margin-top: 2rem;           /* Optional: space above footer */
+  margin-top: 0;           /* Optional: space above footer */
 }
 
 /* Firefox */
