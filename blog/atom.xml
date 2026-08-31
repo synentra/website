@@ -2,11 +2,126 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://synentra.io/blog</id>
     <title>Synentra Blog</title>
-    <updated>2026-08-24T00:00:00.000Z</updated>
+    <updated>2026-09-01T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://synentra.io/blog"/>
     <subtitle>Synentra Blog</subtitle>
     <icon>https://synentra.io/img/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[Reverse Proxy Design for AI APIs]]></title>
+        <id>https://synentra.io/blog/reverse-proxy-design-for-ai-apis</id>
+        <link href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis"/>
+        <updated>2026-09-01T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[How to design a reverse proxy that governs autonomous agent actions before they reach upstream APIs.]]></summary>
+        <content type="html"><![CDATA[<p><img decoding="async" loading="lazy" alt="Reverse Proxy Design for AI APIs" src="https://synentra.io/assets/images/reverse-proxy-design-for-ai-apis-0e98fed3f794b3853e12c20006af14e0.png" width="1731" height="909" class="img_ev3q"></p>
+<p>An autonomous agent wants to update a customer record. Its HTTP request looks ordinary:</p>
+<div class="language-http codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-http codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">PATCH /v1/customers/42</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">Content-Type: application/json</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">{"creditLimit": 50000}</span><br></div></code></pre></div></div>
+<p>A conventional reverse proxy can terminate TLS, authenticate the caller, apply a rate limit, select an upstream, and forward the request. Those are essential controls. But the proxy still faces an agent-specific question: is this request a routine update, an unauthorized financial change, a confused tool call, or an action that should wait for human approval?</p>
+<p>The HTTP shape alone does not answer that question. <code>PATCH /v1/customers/42</code> can represent many intentions depending on the body, the agent, its assigned policy, its recent behaviour, and the surrounding context.</p>
+<p>For autonomous software, a reverse proxy can therefore be more than a routing component. It can be the point where identity, semantic intent, contextual risk, agent trust, deterministic policy, human review, and audit converge <strong>before</strong> an action reaches the system of record.</p>
+<p>That design is not free. The gateway enters the critical path. It must handle credentials correctly, prevent unsafe routing, preserve HTTP semantics, bound latency and failure, and explain every non-trivial outcome. This article examines those responsibilities using Synentra's reverse-proxy model without pretending that one gateway replaces an organisation's ingress, service mesh, identity provider, or general API-management platform.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="a-reverse-proxy-has-two-planes">A reverse proxy has two planes<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#a-reverse-proxy-has-two-planes" class="hash-link" aria-label="Direct link to A reverse proxy has two planes" title="Direct link to A reverse proxy has two planes" translate="no">​</a></h2>
+<p>It is useful to separate the gateway into a <strong>data plane</strong> and a <strong>decision plane</strong>.</p>
+<p>The data plane accepts the HTTP request, reads the target, manages headers and body content, forwards an allowed request, and returns the upstream response. It must be predictable and protocol-correct.</p>
+<p>The decision plane evaluates whether forwarding is permitted. For an agent-governance gateway, relevant inputs can include:</p>
+<ul>
+<li class="">authenticated agent identity and lifecycle state;</li>
+<li class="">HTTP method, target host, path, query, headers, and body;</li>
+<li class="">semantic intent and classification confidence;</li>
+<li class="">request-specific risk;</li>
+<li class="">the agent's changing trust posture;</li>
+<li class="">assigned deterministic policy; and</li>
+<li class="">human-review requirements.</li>
+</ul>
+<p>The two planes must meet at one unambiguous boundary: <strong>no upstream connection for a request that has not reached an allow outcome</strong>. A review outcome is not a delayed allow. It is a held request whose execution depends on a separate authorized decision.</p>
+<!-- -->
+<p>Cheap guards belong before expensive semantic work. An invalid token, quarantined agent, exceeded rate limit, malformed target, or open per-host circuit does not need model inference. After those guards, Synentra's current decision order is intent classification, risk and trust evaluation informed by that intent, then deterministic policy. When signals disagree, the final precedence is deny, then human review, then allow.</p>
+<p>This ordering keeps optimization separate from authorization. Skipping unnecessary work is safe only when the skipped stage cannot turn the outcome into a stricter decision.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="synentras-proxy-contract">Synentra's proxy contract<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#synentras-proxy-contract" class="hash-link" aria-label="Direct link to Synentra's proxy contract" title="Direct link to Synentra's proxy contract" translate="no">​</a></h2>
+<p>Synentra exposes a catch-all proxy route. The full absolute upstream URL is embedded after the <code>/proxy/</code> prefix:</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">&lt;method&gt; http://localhost:7080/proxy/&lt;full-upstream-url&gt;</span><br></div></code></pre></div></div>
+<p>For example:</p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">curl -X GET \</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  "http://localhost:7080/proxy/https://api.example.com/v1/todos/42?include=owner" \</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  -H "Synentra-Authorization: Bearer &lt;agent-jwt&gt;"</span><br></div></code></pre></div></div>
+<p>Synentra support for standard HTTP methods including <code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>, <code>HEAD</code>, and <code>OPTIONS</code>. Query strings in the target URL are preserved. When an allowed request is forwarded, its method, permitted headers, and body are sent to the upstream service.</p>
+<p>Embedding a full target URL makes the agent-side integration direct: one gateway route can govern different upstream APIs without a static route entry for every endpoint. It also creates a serious architectural obligation. A caller-controlled absolute URL is an outbound-routing capability, so policy and network boundaries must constrain where the gateway can connect.</p>
+<p>Do not confuse a convenient route format with a safe egress policy.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="identity-headers-must-not-leak-upstream">Identity headers must not leak upstream<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#identity-headers-must-not-leak-upstream" class="hash-link" aria-label="Direct link to Identity headers must not leak upstream" title="Direct link to Identity headers must not leak upstream" translate="no">​</a></h2>
+<p>The header boundary deserves explicit design.</p>
+<p>By default, Synentra's agent JWT is supplied in <code>Synentra-Authorization</code>. The configured agent-auth header is consumed by the gateway and excluded from forwarding. <code>Host</code> is set from the target URI. Hop-by-hop or transport-managed headers—including <code>Connection</code>, <code>Content-Length</code>, <code>Transfer-Encoding</code>, <code>Proxy-Connection</code>, <code>TE</code>, <code>Keep-Alive</code>, <code>Upgrade</code>, and <code>Trailer</code>—are also not copied as ordinary end-to-end headers.</p>
+<p>That behaviour prevents the upstream API from receiving the gateway credential by accident and lets the HTTP client stack calculate transport details correctly.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-request-body-is-both-evidence-and-payload">The request body is both evidence and payload<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#the-request-body-is-both-evidence-and-payload" class="hash-link" aria-label="Direct link to The request body is both evidence and payload" title="Direct link to The request body is both evidence and payload" translate="no">​</a></h2>
+<p>For intent-aware governance, the body has two roles:</p>
+<ol>
+<li class="">It is evidence used to classify what the request is trying to do.</li>
+<li class="">It is the payload that will be sent upstream if allowed.</li>
+</ol>
+<p>Those roles create buffering and consistency questions. The decision engine and forwarding path must evaluate and send the same content. Limits are necessary so an agent cannot force unbounded memory or disk use.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="outcome-semantics-are-part-of-the-api">Outcome semantics are part of the API<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#outcome-semantics-are-part-of-the-api" class="hash-link" aria-label="Direct link to Outcome semantics are part of the API" title="Direct link to Outcome semantics are part of the API" translate="no">​</a></h2>
+<p>A governed proxy needs more than success and failure. Synentra has the following externally meaningful outcomes:</p>
+<table><thead><tr><th>Outcome</th><th>HTTP behaviour</th><th>Meaning</th></tr></thead><tbody><tr><td>Allowed</td><td>Upstream status and response</td><td>The request passed governance and was forwarded</td></tr><tr><td>Human review</td><td><code>202 Accepted</code> with <code>Location</code></td><td>The request is held; execution is not yet complete</td></tr><tr><td>Authentication failure</td><td><code>401 Unauthorized</code></td><td>Agent token is missing or invalid</td></tr><tr><td>Policy or lifecycle block</td><td><code>403 Forbidden</code></td><td>Policy denied the request or the agent is not permitted</td></tr><tr><td>Rate limit</td><td><code>429 Too Many Requests</code></td><td>The agent exceeded its configured limit</td></tr><tr><td>Open upstream circuit</td><td><code>503 Service Unavailable</code></td><td>The per-host circuit is open</td></tr></tbody></table>
+<p>The client must not treat <code>202 Accepted</code> as a successful upstream mutation. It means the gateway accepted the request into a review workflow. A client can use the <code>Location</code> header to check the pending decision according to the HITL API contract.</p>
+<p>Likewise, an upstream <code>404</code> is different from a gateway <code>403</code>. Preserving that distinction improves troubleshooting and prevents clients from retrying denied work as if the resource were merely unavailable.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="rate-limits-and-circuit-breakers-protect-different-things">Rate limits and circuit breakers protect different things<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#rate-limits-and-circuit-breakers-protect-different-things" class="hash-link" aria-label="Direct link to Rate limits and circuit breakers protect different things" title="Direct link to Rate limits and circuit breakers protect different things" translate="no">​</a></h2>
+<p>Synentra supports per-agent rate limiting and a per-host circuit breaker.</p>
+<p>The rate limiter constrains how much traffic one agent can place on the governance and upstream path. It is an identity-oriented fairness and abuse control.</p>
+<p>The circuit breaker responds to upstream failures. When the configured failure threshold is reached for a host, the circuit can open and stop new calls until recovery conditions are met. It protects the upstream and prevents repeated slow failures from consuming gateway resources.</p>
+<p>Neither control is an authorization policy. A request under the rate limit can still be prohibited. A healthy upstream can still receive a denied decision. A circuit can be open for a trusted agent.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="three-illustrative-routing-scenarios">Three illustrative routing scenarios<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#three-illustrative-routing-scenarios" class="hash-link" aria-label="Direct link to Three illustrative routing scenarios" title="Direct link to Three illustrative routing scenarios" translate="no">​</a></h2>
+<p>The following are architecture examples, not customer stories or measured production results.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="scenario-a-ordinary-read-through-a-central-gateway">Scenario A: ordinary read through a central gateway<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#scenario-a-ordinary-read-through-a-central-gateway" class="hash-link" aria-label="Direct link to Scenario A: ordinary read through a central gateway" title="Direct link to Scenario A: ordinary read through a central gateway" translate="no">​</a></h3>
+<p>An inventory agent calls:</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">GET /proxy/https://inventory.internal/v1/items/42</span><br></div></code></pre></div></div>
+<p>The agent JWT is valid. Cheap guards pass. Intent is classified as <code>safe_read</code>; contextual risk is low; the active agent's trust posture satisfies policy; and the assigned policy allows the read. The proxy removes its agent-auth header, sets the target host, forwards the request, and records the decision.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="scenario-b-same-route-shape-different-intent">Scenario B: same route shape, different intent<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#scenario-b-same-route-shape-different-intent" class="hash-link" aria-label="Direct link to Scenario B: same route shape, different intent" title="Direct link to Scenario B: same route shape, different intent" translate="no">​</a></h3>
+<p>The agent sends:</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">POST /proxy/https://inventory.internal/v1/items/export</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">Content-Type: application/json</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">{"scope":"all","includeSupplierContracts":true}</span><br></div></code></pre></div></div>
+<p>Method and host may be familiar, but the body expresses a broad export. Intent, risk, and policy can produce review or denial instead of forwarding. The proxy route is the same; the governance context is not.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="scenario-c-unhealthy-upstream-host">Scenario C: unhealthy upstream host<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#scenario-c-unhealthy-upstream-host" class="hash-link" aria-label="Direct link to Scenario C: unhealthy upstream host" title="Direct link to Scenario C: unhealthy upstream host" translate="no">​</a></h3>
+<p>Several requests to <code>billing.internal</code> fail. The per-host circuit opens. A new request from a valid, high-trust agent is rejected with <code>503</code> before an upstream attempt. Authentication and policy may be valid, but reliability state prevents forwarding.</p>
+<p>These scenarios illustrate why “routing decision” is overloaded. Selecting the target, authorizing the action, and deciding whether the upstream is currently callable are separate decisions.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="observability-without-credential-leakage">Observability without credential leakage<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#observability-without-credential-leakage" class="hash-link" aria-label="Direct link to Observability without credential leakage" title="Direct link to Observability without credential leakage" translate="no">​</a></h2>
+<p>Synentra provides structured logging and OpenTelemetry integration. A useful proxy trace can connect:</p>
+<ul>
+<li class="">request ID and agent ID;</li>
+<li class="">canonical target host and path;</li>
+<li class="">intent and confidence;</li>
+<li class="">request risk and agent trust;</li>
+<li class="">policy and final decision;</li>
+<li class="">HITL request ID when applicable;</li>
+<li class="">upstream status and duration for allowed requests; and</li>
+<li class="">circuit-breaker or rate-limit outcome.</li>
+</ul>
+<p>Metrics should remain aggregate enough to control cardinality. Host, decision, and status class may be useful dimensions; raw URLs, request IDs, and agent IDs often belong in logs or traces instead.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="deployment-patterns">Deployment patterns<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#deployment-patterns" class="hash-link" aria-label="Direct link to Deployment patterns" title="Direct link to Deployment patterns" translate="no">​</a></h2>
+<p>A governed reverse proxy can be placed in several ways:</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="central-gateway">Central gateway<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#central-gateway" class="hash-link" aria-label="Direct link to Central gateway" title="Direct link to Central gateway" translate="no">​</a></h3>
+<p>Multiple agents send outbound API actions through one Synentra deployment. Policy and audit are centralised, but the gateway becomes a shared dependency and needs careful capacity, isolation, and availability design.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="per-workload-gateway">Per-workload gateway<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#per-workload-gateway" class="hash-link" aria-label="Direct link to Per-workload gateway" title="Direct link to Per-workload gateway" translate="no">​</a></h3>
+<p>An agent and gateway are deployed close together. The network path is simple and blast radius can be smaller, but policy distribution and cross-instance audit become more operationally complex.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="gateway-behind-existing-ingress-or-service-mesh">Gateway behind existing ingress or service mesh<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#gateway-behind-existing-ingress-or-service-mesh" class="hash-link" aria-label="Direct link to Gateway behind existing ingress or service mesh" title="Direct link to Gateway behind existing ingress or service mesh" translate="no">​</a></h3>
+<p>An existing gateway or mesh continues to handle external ingress, mTLS, traffic management, and general API concerns. Synentra governs the dedicated agent-to-API path. This separation is often clearer than asking one layer to own every responsibility.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="respectful-fit-with-existing-infrastructure">Respectful fit with existing infrastructure<a href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis#respectful-fit-with-existing-infrastructure" class="hash-link" aria-label="Direct link to Respectful fit with existing infrastructure" title="Direct link to Respectful fit with existing infrastructure" translate="no">​</a></h2>
+<p>NGINX and Envoy are foundational reverse proxies. Kong and Apache APISIX provide broad API-management capabilities and plugin ecosystems. Cloud API gateways integrate closely with their respective platforms. Service meshes such as Istio and Kuma focus on service-to-service traffic, identity, and policy. OPA is a general-purpose policy engine.</p>
+<p>Synentra's focus is narrower: governing autonomous agent actions using agent identity, semantic intent, risk and trust, deterministic policy, HITL, and audit before forwarding. It can sit alongside existing infrastructure. OPA can serve as the policy component while another gateway or mesh continues to own ingress and service connectivity.</p>
+<p>The right comparison is based on responsibilities, not a universal replacement claim.</p>]]></content>
+        <author>
+            <name>Maintainers</name>
+        </author>
+        <category label="AI-Agent-Governance" term="AI-Agent-Governance"/>
+        <category label="Reverse-Proxy" term="Reverse-Proxy"/>
+        <category label="API-Gateway" term="API-Gateway"/>
+        <category label="Zero-Trust" term="Zero-Trust"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Deep Dive: Agent Identity and Trust Scores]]></title>
         <id>https://synentra.io/blog/agent-identity-and-trust-scores</id>
