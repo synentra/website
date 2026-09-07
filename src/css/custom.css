@@ -10,6 +10,7 @@
   --text-primary: #111827;
   --text-secondary: #4B5563;
   --text-muted: #6B7280;
+  --selection-text-color: #FFFFFF;
   --border-color: rgba(48,48,48,0.2);
   --glass-background: rgba(255,255,255,0.65);
   --glass-border: rgba(48,48,48,0.2);
@@ -45,6 +46,7 @@ html[data-theme='dark'] {
   --text-secondary: #CBD5E1;
   --text-muted: #94A3B8;
   --border-color: #1F2937;
+  --selection-text-color: #FFFFFF;
   --glass-background: rgba(255,255,255,.04);
   --glass-border:#1F2937;
   --ifm-color-primary: #EF4444;
@@ -82,14 +84,14 @@ html[data-theme='dark'] {
 
 /* Firefox */
 ::-moz-selection {
-  background: var(--ifm-color-primary-lightest);
-  color: var(--ifm-button-color);
+  background: var(--ifm-color-primary-darker);
+  color: var(--selection-text-color);
 }
 
 /* Other modern browsers */
 ::selection {
-  background: var(--ifm-color-primary-lightest);
-  color: var(--ifm-button-color);
+  background: var(--ifm-color-primary-darker);
+  color: var(--selection-text-color);
 }
 
 .theme-code-block {
