@@ -2,11 +2,170 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://synentra.io/blog</id>
     <title>Synentra Blog</title>
-    <updated>2026-09-22T00:00:00.000Z</updated>
+    <updated>2026-09-29T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://synentra.io/blog"/>
     <subtitle>Synentra Blog</subtitle>
     <icon>https://synentra.io/img/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[Securing MCP Servers with Synentra]]></title>
+        <id>https://synentra.io/blog/securing-mcp-servers-with-synentra</id>
+        <link href="https://synentra.io/blog/securing-mcp-servers-with-synentra"/>
+        <updated>2026-09-29T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Learn how to place identity, intent-aware policy, risk checks, approval, and audit controls in front of HTTP-based MCP servers with Synentra.]]></summary>
+        <content type="html"><![CDATA[<p><img decoding="async" loading="lazy" alt="Reverse Proxy Design for AI APIs" src="https://synentra.io/assets/images/securing-mcp-servers-with-synentra-39320b379070773a11a91deb55cbe2f8.png" width="1672" height="941" class="img_ev3q"></p>
+<p>Model Context Protocol (MCP) gives AI applications a standard way to discover context and invoke capabilities. That interoperability is useful—and it sharpens an old security question: <strong>what should happen between an agent deciding to use a tool and the tool actually running?</strong></p>
+<p>An MCP server can expose tools that read data, change records, trigger workflows, or call downstream services. Authentication can establish which client is connecting. It does not, by itself, decide whether a particular action is appropriate for that identity, purpose, resource, and moment.</p>
+<p>This article develops a practical control-plane architecture for HTTP-based MCP servers. Synentra sits on the request path as an authorization and governance reverse proxy. It authenticates an agent token, evaluates request context and inferred intent, applies policy and risk controls, can pause selected actions for human approval, and records the decision. The MCP server remains responsible for implementing MCP and for securing its own downstream credentials.</p>
+<p>That boundary matters. Synentra is not presented here as an MCP protocol parser or a replacement for the MCP server's authentication and validation. The integration uses a capability Synentra already provides: governing HTTP API calls through its proxy.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="mcp-changes-the-shape-of-the-trust-boundary">MCP changes the shape of the trust boundary<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#mcp-changes-the-shape-of-the-trust-boundary" class="hash-link" aria-label="Direct link to MCP changes the shape of the trust boundary" title="Direct link to MCP changes the shape of the trust boundary" translate="no">​</a></h2>
+<p>In a conventional application, developers usually know which UI action leads to which API call. With an agent, the path is more dynamic:</p>
+<ol>
+<li class="">A user gives the AI application a goal.</li>
+<li class="">The model chooses among available tools.</li>
+<li class="">The MCP client sends a request to a server.</li>
+<li class="">The server executes code or delegates to another API.</li>
+</ol>
+<p>The protocol standardizes the exchange; it does not make every exposed operation equally safe. A read-only lookup and a destructive administrative action can both appear as tools. The official MCP documentation describes tools as model-controlled capabilities and encourages visible approvals and activity logging where appropriate. Its security guidance also warns that session identifiers are not authentication and that token passthrough is forbidden.</p>
+<p>Those points imply several independent questions:</p>
+<ul>
+<li class="">Who is the agent or workload?</li>
+<li class="">Which upstream user or service initiated the task?</li>
+<li class="">What is the request trying to accomplish?</li>
+<li class="">Which MCP endpoint and downstream resource are involved?</li>
+<li class="">How risky is the action in the current context?</li>
+<li class="">Should it run now, be denied, or wait for a human?</li>
+<li class="">Can an operator reconstruct the decision later?</li>
+</ul>
+<p>Treating these as one “is authenticated” check compresses distinct security decisions into a single bit.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="a-layered-architecture">A layered architecture<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#a-layered-architecture" class="hash-link" aria-label="Direct link to A layered architecture" title="Direct link to A layered architecture" translate="no">​</a></h2>
+<p>For a remote MCP server using Streamable HTTP, the governed path can look like this:</p>
+<!-- -->
+<p>The important design choice is the location of the policy enforcement point. If clients can reach the MCP server directly, the proxy is optional rather than authoritative. Production routing should therefore ensure that governed clients reach the server only through Synentra—for example through private networking, security groups, an ingress policy, or a service mesh rule.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="1-identity-authenticate-the-calling-workload">1. Identity: authenticate the calling workload<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#1-identity-authenticate-the-calling-workload" class="hash-link" aria-label="Direct link to 1. Identity: authenticate the calling workload" title="Direct link to 1. Identity: authenticate the calling workload" translate="no">​</a></h3>
+<p>Synentra uses JWT-based agent identity. The client presents its Synentra token in the <code>Synentra-Authorization</code> header when calling the proxy. The MCP server may still require its own credentials; do not forward a caller's unrelated access token merely because the next hop accepts one.</p>
+<p>This separation avoids confusing three identities:</p>
+<ul>
+<li class="">the human or service that requested work;</li>
+<li class="">the agent or MCP client executing it;</li>
+<li class="">the MCP server's identity toward downstream systems.</li>
+</ul>
+<p>In mature deployments, bind those identities through explicit claims and audit metadata. Rotate short-lived tokens, scope them narrowly, and never treat an MCP session identifier as proof of identity.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="2-intent-evaluate-what-the-request-appears-to-mean">2. Intent: evaluate what the request appears to mean<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#2-intent-evaluate-what-the-request-appears-to-mean" class="hash-link" aria-label="Direct link to 2. Intent: evaluate what the request appears to mean" title="Direct link to 2. Intent: evaluate what the request appears to mean" translate="no">​</a></h3>
+<p>Method and path are necessary inputs, but agent authorization often needs more context. Two calls to the same endpoint can have different purposes. Synentra can classify request intent locally with its ONNX model and combine that output with deterministic policy.</p>
+<p>Intent should be treated as an input, not an oracle. Classification is probabilistic. A robust policy uses it alongside identity, route, method, resource attributes, trust, and risk. High-impact actions should not become safe merely because a model labels them benign.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="3-policy-keep-hard-boundaries-deterministic">3. Policy: keep hard boundaries deterministic<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#3-policy-keep-hard-boundaries-deterministic" class="hash-link" aria-label="Direct link to 3. Policy: keep hard boundaries deterministic" title="Direct link to 3. Policy: keep hard boundaries deterministic" translate="no">​</a></h3>
+<p>OPA/Rego policy is appropriate for rules that need to be explicit, reviewable, and testable. An illustrative policy shape might be:</p>
+<div class="language-rego codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-rego codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">package synentra.mcp</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">default allow := false</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#393A34"><span class="token plain"># Illustrative only: adapt field names to your deployed Synentra policy input.</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">allow if {</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.agent.role == "support-reader"</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.request.method == "POST"</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  startswith(input.request.path, "/proxy/")</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.intent.label == "read_customer_context"</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.risk.score &lt; 0.4</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">}</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">requires_approval if {</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">  input.intent.label == "modify_customer_record"</span><br></div><div class="token-line" style="color:#393A34"><span class="token plain">}</span><br></div></code></pre></div></div>
+<p>The field names above are intentionally labelled illustrative; use the actual policy input exposed by your Synentra version. The architectural principle is stable: deterministic rules establish the envelope, while inferred intent and risk refine the decision.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="4-risk-and-trust-distinguish-possible-from-appropriate">4. Risk and trust: distinguish possible from appropriate<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#4-risk-and-trust-distinguish-possible-from-appropriate" class="hash-link" aria-label="Direct link to 4. Risk and trust: distinguish possible from appropriate" title="Direct link to 4. Risk and trust: distinguish possible from appropriate" translate="no">​</a></h3>
+<p>An agent may be allowed to use an MCP server yet still produce an unusual request. Synentra's risk and trust evaluation can help distinguish routine access from an action that deserves more scrutiny.</p>
+<p>Useful signals include the calling identity, requested route, method, classified intent, confidence, and recent trust context. Keep thresholds visible and version-controlled. A score without an operational policy is only a number.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="5-human-approval-reserve-friction-for-consequential-actions">5. Human approval: reserve friction for consequential actions<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#5-human-approval-reserve-friction-for-consequential-actions" class="hash-link" aria-label="Direct link to 5. Human approval: reserve friction for consequential actions" title="Direct link to 5. Human approval: reserve friction for consequential actions" translate="no">​</a></h3>
+<p>Human-in-the-loop approval is valuable when the cost of a mistaken action is high and the action can tolerate delay. Synentra supports approval flows through webhooks and Slack. Examples might include deleting records, changing permissions, or initiating an external side effect.</p>
+<p>Approval is not a universal answer. It creates latency and reviewer load, and reviewers can habituate to noisy prompts. Prefer automatic allow for clearly low-risk actions, automatic deny for known-prohibited actions, and approval for a narrow middle band.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="6-audit-and-telemetry-record-the-decision-path">6. Audit and telemetry: record the decision path<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#6-audit-and-telemetry-record-the-decision-path" class="hash-link" aria-label="Direct link to 6. Audit and telemetry: record the decision path" title="Direct link to 6. Audit and telemetry: record the decision path" translate="no">​</a></h3>
+<p>An MCP server log can tell you which tool ran. A governance log should additionally explain why the request was allowed, denied, or paused. Synentra provides audit logging and OpenTelemetry support so teams can correlate authorization decisions with application and infrastructure traces.</p>
+<p>Avoid logging sensitive arguments indiscriminately. Record stable identifiers, policy version, decision, timing, and carefully selected context. Redact secrets and personal data at collection time.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="integrating-an-http-mcp-endpoint">Integrating an HTTP MCP endpoint<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#integrating-an-http-mcp-endpoint" class="hash-link" aria-label="Direct link to Integrating an HTTP MCP endpoint" title="Direct link to Integrating an HTTP MCP endpoint" translate="no">​</a></h2>
+<p>Suppose a stateless Streamable HTTP MCP server listens at:</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">http://mcp-server:3001/mcp</span><br></div></code></pre></div></div>
+<p>Synentra's documented proxy form embeds the full upstream URL in the request path. The conceptual client configuration becomes:</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">http://localhost:7080/proxy/http://mcp-server:3001/mcp</span><br></div></code></pre></div></div>
+<p>and the client includes:</p>
+<div class="language-http codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-http codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">Synentra-Authorization: Bearer &lt;agent-token&gt;</span><br></div></code></pre></div></div>
+<p>The exact host depends on deployment networking. Inside a shared Docker network, a service name such as <code>mcp-server</code> is appropriate. From a container reaching a host process, <code>host.docker.internal</code> is common on Docker Desktop; Linux environments may require an explicit host-gateway mapping.</p>
+<p>MCP over Streamable HTTP has transport behavior that a generic proxy must preserve. Clients negotiate the protocol, send JSON-RPC requests, and may use response streaming. Stateful servers can issue an <code>MCP-Session-Id</code>; clients then send it on subsequent requests. The <code>MCP-Protocol-Version</code> header is also used after initialization. These protocol headers are not identity credentials, and an intermediary should not rewrite them into authorization signals.</p>
+<p>Start with a stateless MCP server because it reduces routing and recovery complexity. If you need stateful sessions, verify that your topology preserves the session header, supports the required streaming behavior, and routes a session consistently where necessary. Test disconnects, retries, and proxy timeouts—not only the happy path.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="a-realistic-policy-scenario">A realistic policy scenario<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#a-realistic-policy-scenario" class="hash-link" aria-label="Direct link to A realistic policy scenario" title="Direct link to A realistic policy scenario" translate="no">​</a></h2>
+<p>Consider an internal support assistant with two MCP tools:</p>
+<ul>
+<li class=""><code>get_case_summary(caseId)</code> reads a support case;</li>
+<li class=""><code>close_case(caseId, reason)</code> changes its state.</li>
+</ul>
+<p>This is an illustrative scenario, not a customer deployment.</p>
+<p>Both tools may travel through the same <code>/mcp</code> endpoint. A path-only rule therefore cannot distinguish their business impact. At the HTTP layer, Synentra can govern the request using the context it can observe and classify. For precise tool-level controls, design the deployment so the relevant operation is reliably represented in the observable request context, or complement the edge control with authorization inside the MCP server.</p>
+<p>A defensible decision matrix is:</p>
+<table><thead><tr><th>Request class</th><th>Identity</th><th style="text-align:right">Risk</th><th>Decision</th></tr></thead><tbody><tr><td>Read case context</td><td>support-reader</td><td style="text-align:right">Low</td><td>Allow</td></tr><tr><td>Close a case</td><td>support-operator</td><td style="text-align:right">Medium</td><td>Require approval</td></tr><tr><td>Close a case</td><td>support-reader</td><td style="text-align:right">Any</td><td>Deny</td></tr><tr><td>Unknown or low-confidence intent</td><td>Any</td><td style="text-align:right">Elevated</td><td>Deny or review</td></tr></tbody></table>
+<p>This is deliberately fail-closed. Unknown intent does not silently inherit the permissions of the surrounding session.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-synentra-can-and-cannot-see">What Synentra can and cannot see<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#what-synentra-can-and-cannot-see" class="hash-link" aria-label="Direct link to What Synentra can and cannot see" title="Direct link to What Synentra can and cannot see" translate="no">​</a></h2>
+<p>The main architectural limitation is semantic visibility. Synentra is an HTTP reverse proxy with intent-aware governance; this article does not claim that it natively parses every MCP message or maps MCP tool names to first-class policy attributes.</p>
+<p>That has practical consequences:</p>
+<ul>
+<li class="">A single multiplexed MCP endpoint may hide many tool operations behind one HTTP route.</li>
+<li class="">Encrypted traffic must terminate where policy can inspect the required context, while preserving end-to-end transport security across trusted hops.</li>
+<li class="">Streaming and long-running requests need timeout and buffering tests.</li>
+<li class="">A client that can bypass Synentra can bypass its decisions.</li>
+<li class="">Authorization at the edge does not remove the need for input validation, rate limits, and least-privilege downstream credentials in the MCP server.</li>
+</ul>
+<p>If exact tool arguments determine authorization, enforce that rule in the MCP server or expose a trustworthy attribute that the gateway can evaluate. Defense in depth is preferable to pretending one layer has more information than it does.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="operational-rollout">Operational rollout<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#operational-rollout" class="hash-link" aria-label="Direct link to Operational rollout" title="Direct link to Operational rollout" translate="no">​</a></h2>
+<p>A safe rollout can be incremental:</p>
+<ol>
+<li class=""><strong>Inventory endpoints and tools.</strong> Classify reads, writes, destructive actions, and access to sensitive data.</li>
+<li class=""><strong>Map identities.</strong> Decide which agent identity represents each workload and how upstream user context is retained.</li>
+<li class=""><strong>Start in observation.</strong> Compare expected decisions with audit events before enforcing high-impact rules.</li>
+<li class=""><strong>Write narrow policies.</strong> Begin with one MCP server and a small number of intents or routes.</li>
+<li class=""><strong>Block bypass paths.</strong> Make the governed route the normal network route.</li>
+<li class=""><strong>Test protocol behavior.</strong> Exercise initialization, tool discovery, tool calls, errors, reconnects, and sessions if enabled.</li>
+<li class=""><strong>Add approval selectively.</strong> Measure reviewer latency and false-positive burden.</li>
+<li class=""><strong>Review logs and traces.</strong> Verify that decisions are explainable without exposing sensitive request data.</li>
+</ol>
+<p>Policy tests should cover allow, deny, approval, unknown intent, expired identity, malformed transport headers, and upstream failure. Treat policy changes like application code: review them, test them, and make rollback straightforward.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="alternatives-and-complements">Alternatives and complements<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#alternatives-and-complements" class="hash-link" aria-label="Direct link to Alternatives and complements" title="Direct link to Alternatives and complements" translate="no">​</a></h2>
+<p>There is no single mandatory MCP security architecture.</p>
+<ul>
+<li class=""><strong>Authorization in the MCP server</strong> has the richest tool and argument context. It also couples policy implementation to each server.</li>
+<li class=""><strong>An API gateway or identity-aware proxy</strong> can provide mature network and authentication controls. Depending on the product, it may not reason about agent intent or risk.</li>
+<li class=""><strong>Service-mesh policy</strong> can constrain service-to-service communication and identity at the network layer, but usually has limited application semantics.</li>
+<li class=""><strong>MCP-specific security products and emerging ecosystem controls</strong> may offer protocol-native inspection. Evaluate their supported transport and protocol versions explicitly.</li>
+</ul>
+<p>Synentra is best understood as a focused governance layer for agent-originated HTTP calls: local intent classification, deterministic policy, risk and trust, optional human approval, audit, and observability. It can complement controls inside the MCP server rather than replace them.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="design-checklist">Design checklist<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#design-checklist" class="hash-link" aria-label="Direct link to Design checklist" title="Direct link to Design checklist" translate="no">​</a></h2>
+<p>Before exposing a remote MCP server, verify:</p>
+<ul class="contains-task-list containsTaskList_mC6p">
+<li class="task-list-item"><input type="checkbox" disabled=""> <!-- -->Every client has an explicit workload identity.</li>
+<li class="task-list-item"><input type="checkbox" disabled=""> <!-- -->Tokens are audience-bound and are not passed through to unrelated services.</li>
+<li class="task-list-item"><input type="checkbox" disabled=""> <!-- -->Session identifiers are never treated as authentication.</li>
+<li class="task-list-item"><input type="checkbox" disabled=""> <!-- -->The MCP server is not reachable through an unintended bypass route.</li>
+<li class="task-list-item"><input type="checkbox" disabled=""> <!-- -->Low-risk reads, consequential writes, and destructive actions have different policies.</li>
+<li class="task-list-item"><input type="checkbox" disabled=""> <!-- -->Unknown intent and low-confidence classifications have a defined outcome.</li>
+<li class="task-list-item"><input type="checkbox" disabled=""> <!-- -->Approval is limited to actions that justify human latency.</li>
+<li class="task-list-item"><input type="checkbox" disabled=""> <!-- -->Streaming, timeouts, reconnects, and stateful sessions are tested.</li>
+<li class="task-list-item"><input type="checkbox" disabled=""> <!-- -->The MCP server validates inputs and uses least-privilege downstream credentials.</li>
+<li class="task-list-item"><input type="checkbox" disabled=""> <!-- -->Logs explain decisions while redacting secrets and sensitive data.</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="conclusion">Conclusion<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#conclusion" class="hash-link" aria-label="Direct link to Conclusion" title="Direct link to Conclusion" translate="no">​</a></h2>
+<p>MCP standardizes connectivity, not trust. The useful security boundary is not simply “can this client connect?” but “should this identified agent perform this action, with this apparent intent and risk, now?”</p>
+<p>Putting Synentra in front of an HTTP-based MCP server creates a place to make and record that decision. Keep the claims precise: the proxy governs the HTTP request path; the MCP server still owns protocol semantics, validation, and downstream authorization. With that division of responsibility, teams can add control without redesigning every agent or pretending a gateway understands context it cannot observe.</p>
+<p><strong>Primary CTA:</strong> Follow the hands-on <a class="" href="https://synentra.io/docs/tutorials/mcp-integration">MCP Integration Tutorial</a> to run a minimal MCP server through Synentra and test the governed request path.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="references">References<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#references" class="hash-link" aria-label="Direct link to References" title="Direct link to References" translate="no">​</a></h2>
+<ul>
+<li class=""><a href="https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro" target="_blank" rel="noopener noreferrer" class="">Model Context Protocol: Introduction</a></li>
+<li class=""><a href="https://modelcontextprotocol.io/docs/2026-07-28/learn/server-concepts" target="_blank" rel="noopener noreferrer" class="">MCP server concepts</a></li>
+<li class=""><a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/transports" target="_blank" rel="noopener noreferrer" class="">MCP Streamable HTTP transport</a></li>
+<li class=""><a href="https://modelcontextprotocol.io/docs/2025-11-25/tutorials/security/security_best_practices" target="_blank" rel="noopener noreferrer" class="">MCP security best practices</a></li>
+<li class=""><a href="https://github.com/synentra/synentra" target="_blank" rel="noopener noreferrer" class="">Synentra on GitHub</a></li>
+</ul>]]></content>
+        <author>
+            <name>Maintainers</name>
+        </author>
+        <category label="MCP server security" term="MCP server security"/>
+        <category label="Secure-Model-Context-Protocol" term="Secure-Model-Context-Protocol"/>
+        <category label="AI agent Authorization" term="AI agent Authorization"/>
+        <category label="MCP Access Control" term="MCP Access Control"/>
+        <category label="Synentra MCP" term="Synentra MCP"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Real-Time Risk Scoring for AI Agents: From Signals to Decisions]]></title>
         <id>https://synentra.io/blog/real-time-risk-scoring-ai-agents</id>
