@@ -172,10 +172,8 @@ function HomepageHeader(): JSX.Element {
           </div>
 
           <h1 className={styles.title}>
-            <span className={styles.titleBlack}>Govern every</span>
-            <span className={styles.titleBlack}>AI-agent action</span>
-            <span className={styles.titleRed}>before it reaches</span>
-            <span className={styles.titleRed}>your APIs.</span>
+            <span className={styles.titleBlack}>Intent-Aware Runtime</span>
+            <span className={styles.titleRed}>Governance for AI Agents</span>
           </h1>
 
           <p className={styles.description}>
