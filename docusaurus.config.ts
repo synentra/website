@@ -190,7 +190,7 @@ const config: Config = {
       ],
       logo: {
         alt: 'Synentra Logo',
-        src: 'img/logo.png',
+        src: 'img/footer_logo.png',
         href: '/',
         width: 96,
       },

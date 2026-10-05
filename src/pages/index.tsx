@@ -228,7 +228,7 @@ function HomepageHeader(): JSX.Element {
                 <span />
                 <span />
               </div>
-              <span className={styles.cardTitle}>Synentra Gateway</span>
+              <span className={styles.cardTitle}>Synentra Runtime Governance</span>
               <span className={styles.liveStatus}><span /> Live</span>
             </div>
 
