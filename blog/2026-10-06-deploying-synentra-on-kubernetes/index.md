@@ -16,7 +16,7 @@ Synentra sits between autonomous AI agents and HTTP APIs. It validates agent ide
 
 <!-- truncate -->
 
-This guide develops a Kubernetes architecture for Synentra without assuming that Kubernetes solves those application-level decisions automatically. It covers workload placement, health checks, configuration, persistence, secrets, networking, scaling, upgrades, and observability.
+This guide develops a Kubernetes architecture for Synentra without assuming that Kubernetes solves those application-level decisions automatically. It covers workload placement, health checks, configuration, persistence, secrets, networking, scaling, upgrades, and observability. The companion [Helm Chart Deployment tutorial](/docs/tutorials/helm-chart-deployment) builds a minimal chart from source and installs it on a local cluster.
 
 ---
 
@@ -354,6 +354,8 @@ The most reliable Kubernetes deployment is not the one with the most objects. It
 Kubernetes provides a strong substrate for running Synentra, but the deployment architecture must preserve the governance boundary that gives the product value. Keep upstream APIs behind that boundary, treat health probes as control-plane decisions, match replica count to the state model, and make upgrades and observability part of the design.
 
 Begin with the smallest topology you can test honestly. Then externalize state, harden network paths, and scale based on measured behavior rather than a copied values file.
+
+**Primary CTA:** Build and validate the baseline with the [Helm Chart Deployment tutorial](/docs/tutorials/helm-chart-deployment).
 
 ## References
 
