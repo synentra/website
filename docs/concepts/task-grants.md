@@ -38,5 +38,4 @@ If a grant is insufficient, request appropriate authority through your organizat
 ## Related concepts
 
 - [Agents and Identity](agents-and-identity.md)
-- [Budgets and Limits](budgets-and-limits.md)
 - [Human Approval](human-approval.md)

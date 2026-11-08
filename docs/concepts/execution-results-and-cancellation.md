@@ -45,5 +45,4 @@ Cancellation and reconciliation are distinct actions; neither should be describe
 ## Related concepts
 
 - [Invocations](invocations.md)
-- [Budgets and Limits](budgets-and-limits.md)
 - [Audit History](audit-history.md)
