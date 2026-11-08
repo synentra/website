@@ -3,7 +3,8 @@
   "position": 2,
   "link": {
     "type": "generated-index",
+    "title": "Synentra Concepts",
     "slug": "/concepts",
-    "description": "Learn the fundamental concepts behind Synentra, including architecture, data flow, and best practices."
+    "description": "Understand the actions your agents can request, the decisions you make, and what happens to your work."
   }
 }
