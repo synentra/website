@@ -1,0 +1,104 @@
+---
+id: errorcodes
+title: Error Codes
+sidebar_label: Error Codes
+sidebar_position: 1
+description: Comprehensive guide to Synentra's error handling system
+---
+
+When something goes wrong in Synentra, you'll receive clear error messages that help you understand what happened and how to fix it. This guide explains how to read and respond to error messages.
+
+## Understanding Error Messages
+
+Every error message in Synentra includes:
+
+- **Error Code** - A unique identifier (e.g., `SYN040001`) that helps identify the specific issue
+- **Message** - A clear description of what went wrong
+- **Type** - The category of error (validation, not found, unauthorized, etc.)
+
+### Error Code Format
+
+Error codes follow this pattern: **SYN** + 6 digits
+
+**Example:** `SYN400001`
+
+The 6 digits follow a hierarchical structure: **[CC][MM][NNN]**
+
+- **CC** (2 digits) - Category Code: Identifies the broad category of error
+  - `00` = System errors
+  - `01` = Infrastructure errors
+  - `02` = Serialization errors
+  - `03` = Security errors (Unauthorized)
+  - `04` = Validation errors
+  - `05` = Not Found errors
+  - `06` = Conflict errors
+  - `07` = Forbidden errors
+  - `08` = Authentication errors
+
+- **MM** (2 digits) - Module/Subcategory Code: Identifies the specific module or subsystem
+  - `00` = Core module
+  - `01`, `02`, etc. = Specific modules within the category
+
+- **NNN** (3 digits) - Specific Error Number: The unique error within that module
+  - `001`, `002`, `003`, etc.
+
+**Example Breakdown:**
+- `SYN400001` = Validation (04) + Core module (00) + First error (001) = ValidationFailed
+- `SYN800002` = Authentication (08) + Core module (00) + Second error (002) = ExpiredSession
+- `SYN102001` = Infrastructure (01) + Module 02 + First error (001) = FileNotFound
+
+This hierarchical system helps organize errors logically and makes it easier to identify the source and type of problem at a glance.
+
+:::tip
+Always note the error code when contacting support. It helps us quickly identify and resolve your issue.
+:::
+
+## Common Error Types
+
+| Error Type | What It Means | What You Can Do |
+|------------|---------------|-----------------|
+| **Validation** | The information you entered doesn't meet requirements | Check the highlighted fields and correct the issues mentioned in the error message |
+| **Not Found** | The item you're looking for doesn't exist | Verify the ID, name, or search criteria you're using |
+| **Conflict** | The item already exists or conflicts with existing data | Use a different name, or check if the item was already created |
+| **Unauthorized** | You're not logged in or your session has expired | Log in again with your credentials |
+| **Forbidden** | You don't have permission to perform this action | Contact your administrator to request the necessary permissions |
+| **Failure** | An unexpected system error occurred | Try again later. If the problem persists, contact support with the error code |
+
+## Error Categories
+
+Errors are organized into different categories using the hierarchical **[CC][MM][NNN]** format. The first two digits (CC) identify the category:
+
+| Category Code | Category | What It Covers |
+|---------------|----------|----------------|
+| **00** | System | Core system failures |
+| **01** | Infrastructure | File access, configuration issues |
+| **02** | Serialization | Data format or conversion problems |
+| **03** | Security (Unauthorized) | Authentication without credentials |
+| **04** | Validation | Input validation and required field errors |
+| **05** | Not Found | Missing resources or items |
+| **06** | Conflict | Duplicate resources or conflicts |
+| **07** | Forbidden | Authorization and permission issues |
+| **08** | Authentication | Login credentials and session issues |
+| **Persistence** | Database and data storage issues (categories 05-06) |
+
+The middle two digits (MM) identify the specific module, and the last three digits (NNN) are the unique error number within that module.
+
+## Error Code Reference
+
+This reference lists all error codes you might encounter in Synentra, along with their meanings and suggested actions.
+
+| Error Code | Name | What It Means |
+|------------|------|---------------|
+| `SYN000001` | SystemFailure | A critical system error occurred |
+| `SYN102001` | FileNotFound | A required file could not be found |
+| `SYN200001` | SerializationFailed | Data could not be converted to the required format |
+| `SYN200002` | DeserializationFailed | Data could not be read from the stored format |
+| `SYN200003` | InvalidJson | The JSON data format is invalid |
+| `SYN301001` | Unauthorized | Access attempt without proper authentication |
+| `SYN400001` | ValidationFailed | Input validation failed |
+| `SYN400002` | RequiredFieldMissing | A required field is missing |
+| `SYN501001` | ResourceNotFound | The requested item doesn't exist |
+| `SYN601001` | DuplicateResource | An item with this information already exists |
+| `SYN700001` | AccessDenied | You don't have permission to access this resource |
+| `SYN800001` | MissingCredentials | Authentication credentials are missing |
+| `SYN800002` | ExpiredSession | Your session has expired |

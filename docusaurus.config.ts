@@ -29,7 +29,18 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           showLastUpdateTime: true,
           showLastUpdateAuthor: false,
-          includeCurrentVersion: true
+          includeCurrentVersion: true,
+          lastVersion: 'current',
+          versions: {
+            '1.0.0': {
+              label: '1.0.x',
+              banner: 'none',
+            },
+            current: {
+              label: '2.0.x (Latest)',
+              path: '/',
+            },
+          },
         },
         blog: {
           showReadingTime: true,
@@ -130,6 +141,10 @@ const config: Config = {
             href: 'https://www.linkedin.com/company/synentra',
           },
         ],
+      },
+      {
+        type: 'docsVersionDropdown',
+        position: 'right',
       },
       {
         to: 'https://discord.synentra.io/',

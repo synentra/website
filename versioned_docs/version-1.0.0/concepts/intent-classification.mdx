@@ -1,0 +1,127 @@
+---
+id: intent-classification
+title: "Intent Classification"
+sidebar_label: "Intent Classification"
+sidebar_position: 2
+description: Learn how Synentra uses semantic intent classification to understand what AI agents are trying to accomplish.
+---
+
+One of Synentra's core capabilities is **Intent Classification**.
+
+Instead of making decisions solely based on HTTP methods, URLs, or identities, Synentra analyzes requests to determine **what an AI agent intends to accomplish**.
+
+Understanding intent enables policies to be written in business language rather than low-level API details.
+
+---
+
+## What Is Intent?
+
+Intent describes the **goal behind a request**.
+
+Consider these requests:
+
+```
+DELETE /users/123
+```
+
+```
+DELETE /sessions/123
+```
+
+Both use the same HTTP method.
+
+However, they represent very different operations.
+
+One deletes customer data.
+
+The other removes a temporary session.
+
+Traditional API gateways treat both requests similarly.
+
+Synentra recognizes that their intents are different.
+
+---
+
+## Why Intent Matters
+
+HTTP requests often fail to communicate business meaning.
+
+For example:
+
+```
+POST /api/export
+```
+
+could mean:
+
+- Export one document
+- Export one customer
+- Export one million records
+
+The endpoint alone provides little context.
+
+Intent classification provides the missing semantic understanding.
+
+---
+
+## Semantic Analysis
+
+Synentra analyzes multiple aspects of each request, including:
+
+- HTTP method
+- URL path
+- Query parameters
+- Headers
+- Request body
+- Contextual metadata
+
+These features are evaluated by a local machine learning model to infer the most likely intent.
+
+---
+
+## Example
+
+Request:
+
+```http
+POST /employees/export
+```
+
+Payload:
+
+```json
+{
+  "department": "Finance",
+  "format": "csv"
+}
+```
+
+Predicted intent:
+
+```
+bulk_export
+```
+
+Confidence:
+
+```
+97%
+```
+
+Policies can then be written against the semantic action rather than the endpoint.
+
+---
+
+## Local Inference
+
+Synentra performs inference locally using an ONNX Runtime model.
+
+Advantages include:
+
+- Low latency
+- No external API calls
+- Improved privacy
+- Offline operation
+- Predictable performance
+
+Because requests never leave your environment, sensitive enterprise data remains under your control.

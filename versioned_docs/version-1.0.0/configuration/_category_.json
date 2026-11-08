@@ -1,0 +1,9 @@
+{
+  "label": "Configuration",
+  "position": 7,
+  "link": {
+    "type": "generated-index",
+    "slug": "/configuration",
+    "description": "Learn how to configure Synentra to fit your needs, including setting up environment variables, configuring the database, and customizing the application settings."
+  }
+}

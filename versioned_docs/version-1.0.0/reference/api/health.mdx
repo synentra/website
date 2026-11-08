@@ -1,0 +1,120 @@
+---
+id: health-api
+title: Health API Reference
+sidebar_label: Health API
+sidebar_position: 5
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Synentra exposes a health check endpoint that can be used for **liveness** and **readiness** probes, as well as for monitoring the overall health of the gateway and its dependencies.
+
+The endpoint aggregates the status of various internal components and returns a summary, including the time taken to perform all checks.
+
+:::tip Base URL
+Throughout this guide the base URL is assumed to be your running server, e.g. `http://localhost:7080`.
+Replace `<BASE_URL>` in the examples with your actual server address.
+:::
+
+---
+
+## Endpoint
+
+```
+GET <BASE_URL>/health
+```
+
+This endpoint does **not** require authentication and is intended for monitoring tools, orchestrators (e.g., Kubernetes), and load balancers.
+
+---
+
+## Response
+
+The response is a JSON object with two fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | `string` | Overall health status. Possible values: `"Healthy"` or `"Unhealthy"`. |
+| `healthCheckDuration` | `string` | Time span (format: `d.HH:mm:ss.fffffff`) taken to execute all health checks. |
+
+- If **all** registered health checks pass, the HTTP status code is `200 OK` and `status` is `"Healthy"`.
+- If **any** check fails (or times out), the HTTP status code is `503 Service Unavailable` and `status` is `"Unhealthy"`.
+
+---
+
+## Example
+
+<Tabs groupId="lang">
+<TabItem value="curl" label="cURL" default>
+
+```curl
+curl "http://localhost:7080/health"
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+fetch('http://localhost:7080/health')
+  .then(res => res.json())
+  .then(console.log);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.get('http://localhost:7080/health')
+print(response.json())
+```
+
+</TabItem>
+</Tabs>
+
+**Response (200 OK):**
+```json
+{
+  "status": "Healthy",
+  "healthCheckDuration": "00:00:00.0123456"
+}
+```
+
+**Response (503 Service Unavailable):**
+```json
+{
+  "status": "Unhealthy",
+  "healthCheckDuration": "00:00:00.0456789"
+}
+```
+
+---
+
+## Usage in Orchestrators
+
+### Kubernetes
+
+The `/health` endpoint is ideal for both **liveness** and **readiness** probes:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 7080
+  initialDelaySeconds: 10
+  periodSeconds: 10
+```
+
+### Docker / Compose
+
+You can use `curl` or a custom health check script:
+
+```yaml
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:7080/health"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+```

@@ -1,0 +1,309 @@
+---
+id: hitl
+title: "Human-in-the-Loop API reference"
+sidebar_label: HITL API
+sidebar_position: 6
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+The **Human-in-the-Loop (HITL)** system allows operators to manually review and approve or deny high-risk requests that have been intercepted by the decision engine. This ensures human oversight for sensitive operations, such as bulk deletes or actions that exceed a risk threshold.
+
+:::tip Base URL
+Throughout this guide the base URL is assumed to be your running server, e.g. `http://localhost:7080`.
+Replace `<BASE_URL>` in the examples with your actual server address.
+:::
+
+---
+
+## How HITL Works
+
+When the decision engine returns `Hitl` (either due to a matching policy rule or a risk score exceeding the `HumanInTheLoop.Threshold`), the request is suspended and stored with a time‑to‑live (TTL). The caller receives a `202 Accepted` response with a `Location` header pointing to the HITL status endpoint.
+
+An operator can then:
+
+- **Approve** the request → it is replayed against the upstream service.
+- **Deny** the request → it is discarded and an audit trail entry is created.
+
+If the TTL expires before any action is taken, the request is automatically removed.
+
+---
+
+## API Endpoints
+
+### List pending requests
+
+Returns a list of all currently pending HITL requests (status `Pending`).
+
+```http
+GET <BASE_URL>/hitl
+```
+
+#### Examples
+
+<Tabs groupId="lang">
+<TabItem value="curl" label="cURL" default>
+
+```curl
+curl "http://localhost:7080/hitl"
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+fetch(`http://localhost:7080/hitl`)
+  .then(res => res.json())
+  .then(console.log);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.get(f'http://localhost:7080/hitl')
+print(response.json())
+```
+
+</TabItem>
+</Tabs>
+
+**Response** `200 OK`
+
+```json
+[
+  {
+    "id": "d3f30961-e494-4b11-9830-f8cae65a13d9",
+    "method": "DELETE",
+    "url": "https://api.example.com/users/all",
+    "reason": "High risk score: 0.92",
+    "agentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "timestamp": "2025-01-01T12:00:00Z",
+    "expiresAt": "2025-01-01T13:00:00Z"
+  }
+]
+```
+
+---
+
+### Get request status
+
+Retrieves the full details of a specific HITL request.
+
+```http
+GET http://localhost:7080/hitl/status/{id}
+```
+
+#### URL Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | `string` | The unique identifier of the HITL request |
+
+#### Examples
+
+<Tabs groupId="lang">
+<TabItem value="curl" label="cURL" default>
+
+```curl
+curl "http://localhost:7080/hitl/status/d3f30961-e494-4b11-9830-f8cae65a13d9"
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+fetch(`http://localhost:7080/hitl/status/d3f30961-e494-4b11-9830-f8cae65a13d9`)
+  .then(res => res.json())
+  .then(console.log);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.get(f'http://localhost:7080/hitl/status/d3f30961-e494-4b11-9830-f8cae65a13d9')
+print(response.json())
+```
+
+</TabItem>
+</Tabs>
+
+**Response** `200 OK`
+
+```json
+{
+  "id": "d3f30961-e494-4b11-9830-f8cae65a13d9",
+  "status": "Pending",
+  "request": {
+    "id": "d3f30961-e494-4b11-9830-f8cae65a13d9",
+    "method": "DELETE",
+    "url": "https://api.example.com/users/all",
+    "headers": { "Content-Type": "application/json" },
+    "body": "{\"confirm\": true}",
+    "reason": "Policy rule: require-hitl-for-bulk-delete",
+    "agentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "timestamp": "2025-01-01T12:00:00Z",
+    "expiresAt": "2025-01-01T13:00:00Z"
+  }
+}
+```
+
+**Possible `status` values:** `Pending`, `Approved`, `Denied`, `Expired`
+
+**Response** `404 Not Found` — if the ID does not exist or has already been removed.
+
+---
+
+### Approve a request
+
+Approves a pending request. Synentra immediately **replays** the original request to the upstream and returns the upstream's response to the caller.
+
+```http
+POST http://localhost:7080/hitl/{id}/approve
+```
+
+#### Request body
+
+A JSON object with an optional `comment` field.
+
+```json
+{
+  "comment": "Verified with team lead — proceed"
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `comment` | `string` | ❌ | Optional operator comment, stored in audit trail |
+
+#### Examples
+
+<Tabs groupId="lang">
+<TabItem value="curl" label="cURL" default>
+
+```curl
+curl -X POST "http://localhost:7080/hitl/d3f30961-e494-4b11-9830-f8cae65a13d9/approve" \
+  -H "Content-Type: application/json" \
+  -d '{"comment": "Verified with team lead — proceed"}'
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+fetch(`http://localhost:7080/hitl/d3f30961-e494-4b11-9830-f8cae65a13d9/approve`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ comment: 'Verified with team lead — proceed' })
+})
+.then(res => res.text())
+.then(console.log);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.post(
+    f'http://localhost:7080/hitl/d3f30961-e494-4b11-9830-f8cae65a13d9/approve',
+    json={'comment': 'Verified with team lead — proceed'}
+)
+print(response.text)
+```
+
+</TabItem>
+</Tabs>
+
+**Response** `200 OK` — the upstream response is returned (status, headers, and body).
+
+**Response** `404 Not Found` — if the ID does not exist or has expired.
+
+**Response** `502 Bad Gateway` — if the upstream service fails during replay.
+
+---
+
+### Deny a request
+
+Denies a pending request. The request is permanently discarded.
+
+```http
+POST http://localhost:7080/hitl/{id}/deny
+```
+
+#### Request body
+
+A JSON object with an optional `comment` field.
+
+```json
+{
+  "comment": "Bulk delete not authorised for this agent"
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `comment` | `string` | ❌ | Optional operator comment, stored in audit trail |
+
+#### Examples
+
+<Tabs groupId="lang">
+<TabItem value="curl" label="cURL" default>
+
+```curl
+curl -X POST "http://localhost:7080/hitl/d3f30961-e494-4b11-9830-f8cae65a13d9/deny" \
+  -H "Content-Type: application/json" \
+  -d '{"comment": "Bulk delete not authorised for this agent"}'
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+fetch(`http://localhost:7080/hitl/d3f30961-e494-4b11-9830-f8cae65a13d9/deny`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ comment: 'Bulk delete not authorised for this agent' })
+})
+.then(res => res.text())
+.then(console.log);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.post(
+    f'http://localhost:7080/hitl/d3f30961-e494-4b11-9830-f8cae65a13d9/deny',
+    json={'comment': 'Bulk delete not authorised for this agent'}
+)
+print(response.text)
+```
+
+</TabItem>
+</Tabs>
+
+**Response** `200 OK`
+
+**Response** `404 Not Found` — if the ID does not exist or has expired.
+
+---
+
+## Security and Configuration
+
+- **Sensitive headers** (`Authorization`, `Cookie`, `X-Api-Key`, etc.) are **redacted** before being stored in the HITL cache.
+- Pending requests expire automatically after `TimeoutSeconds` (default: 3600 seconds / 1 hour).
+- `MaxPendingRequests` limits the number of concurrent HITL items to prevent cache flooding.
+
+## Configuration
+
+For full configuration details, see the [HITL Configuration](../../configuration/hitl) page.

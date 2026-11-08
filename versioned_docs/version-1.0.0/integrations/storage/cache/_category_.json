@@ -1,0 +1,9 @@
+{
+  "label": "Cache",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "slug": "/integrations/storage/cache",
+    "description": "Configure caching providers in Synentra to improve performance, reduce repeated computations, and enable scalable distributed caching across gateway instances. This section covers supported cache integrations and configuration options."
+  }
+}

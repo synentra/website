@@ -1,0 +1,153 @@
+---
+id: tokens-api
+title: Tokens API Reference
+sidebar_label: Tokens API
+sidebar_position: 3
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Exchange an agent's ID and credentials for a JWT access token.  
+The token is a short‑lived JWT that must be included in the `Synentra-Authorization` header of subsequent Proxy API calls.
+
+:::tip Base URL
+Throughout this guide the base URL is assumed to be your running server, e.g. `http://localhost:7080`.  
+Replace `<BASE_URL>` in the examples with your actual server address.
+:::
+
+---
+
+## API Endpoints
+
+### Exchange credentials for JWT
+
+```http
+POST <BASE_URL>/tokens
+```
+
+#### Request body
+
+A JSON object with the following fields:
+
+```json
+{
+  "agentId": "75383811-8190-41a7-be95-389aa50341be",
+  "clientSecret": "supersecret",
+  "externalToken": ""
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `agentId` | ✅ | The unique identifier of the agent. |
+| `clientSecret` | ❌ | The agent's secret (used for the self‑signed flow). Must be provided if `externalToken` is not. |
+| `externalToken` | ❌ | A JWT from an external identity provider (if configured). Must be provided if `clientSecret` is not. |
+
+> **At least one** of `clientSecret` or `externalToken` must be supplied and valid. If both are present, the external token is tried first.
+
+#### Responses
+
+- **`200 OK`** – Authentication succeeded.
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+- **`401 Unauthorized`** – Invalid credentials or the agent is inactive/not found.
+
+---
+
+#### Examples
+
+<Tabs groupId="lang">
+
+<TabItem value="curl" label="cURL" default>
+```curl
+# Using client secret (self‑signed flow)
+curl -X POST "http://localhost:7080/tokens" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "clientSecret": "my-strong-secret"
+  }'
+
+# Using external token (SSO flow) – when external identity provider is configured
+curl -X POST "http://localhost:7080/tokens" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "externalToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }'
+```
+</TabItem>
+
+<TabItem value="js" label="JavaScript">
+```javascript
+// Client secret example
+fetch(`http://localhost:7080/tokens`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    agentId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    clientSecret: 'my-strong-secret'
+  })
+})
+.then(res => res.json())
+.then(console.log);
+
+// External token example
+fetch(`http://localhost:7080/tokens`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    agentId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    externalToken: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...'
+  })
+})
+.then(res => res.json())
+.then(console.log);
+```
+</TabItem>
+
+<TabItem value="python" label="Python">
+```python
+import requests
+
+# Client secret example
+response = requests.post(
+    'http://localhost:7080/tokens',
+    json={
+        'agentId': '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+        'clientSecret': 'my-strong-secret'
+    }
+)
+print(response.json())
+
+# External token example
+response = requests.post(
+    'http://localhost:7080/tokens',
+    json={
+        'agentId': '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+        'externalToken': 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...'
+    }
+)
+print(response.json())
+```
+</TabItem>
+
+</Tabs>
+
+---
+
+## Authentication flows explained
+
+1. **Self‑signed (client secret) flow** – The default method. The agent’s `clientSecret` is hashed and compared with the stored hash.  
+   On success, a JWT is generated using a symmetric key (configured via `Security:AgentAuth:TokenIssuance`). The token is valid for a configurable period (default 15 minutes).
+
+2. **External identity provider flow** – If the system is configured to trust an external OIDC provider (by setting `Security:AgentAuth:ExternalIdentity`), you can supply a JWT obtained from that provider in the `externalToken` field.  
+   The token is validated against the provider’s signing keys and audience/issuer rules. If valid, the agent is authenticated and a new internal JWT is issued.
+
+> **Note:** The response `accessToken` is the internal JWT that must be used for all subsequent proxy API calls. It contains the agent’s ID, name, and trust score as claims.
