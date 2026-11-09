@@ -3,7 +3,7 @@ id: "risk"
 title: "Risk"
 sidebar_label: "Risk"
 sidebar_position: 7
-slug: "/concepts/risk"
+slug: "risk"
 description: "Understand how risk evidence informs the handling of a request."
 ---
 
@@ -37,6 +37,6 @@ An agent with favorable trust can still request a prohibited action. Risk eviden
 
 ## Related concepts
 
-- [Agent Trust](agent-trust.md)
-- [Policies and Restrictions](policies-and-restrictions.md)
-- [Human Approval](human-approval.md)
+- [Agent Trust](agent-trust)
+- [Policies and Restrictions](policies-and-restrictions)
+- [Human Approval](human-approval)

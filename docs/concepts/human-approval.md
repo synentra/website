@@ -3,7 +3,7 @@ id: "human-approval"
 title: "Human Approval"
 sidebar_label: "Human Approval"
 sidebar_position: 10
-slug: "/concepts/human-approval"
+slug: "human-approval"
 description: "Understand how review, approval, rejection, and resume work."
 ---
 
@@ -39,6 +39,6 @@ If approved work does not proceed, inspect the invocation and execution records.
 
 ## Related concepts
 
-- [Governance Decisions](governance-decisions.md)
-- [Invocations](invocations.md)
-- [Task Grants](task-grants.md)
+- [Governance Decisions](governance-decisions)
+- [Invocations](invocations)
+- [Task Grants](task-grants)

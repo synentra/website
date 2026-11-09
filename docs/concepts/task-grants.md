@@ -3,7 +3,7 @@ id: "task-grants"
 title: "Task Grants"
 sidebar_label: "Task Grants"
 sidebar_position: 11
-slug: "/concepts/task-grants"
+slug: "task-grants"
 description: "Understand scoped and time-limited authority for an agent's task."
 ---
 
@@ -37,5 +37,5 @@ If a grant is insufficient, request appropriate authority through your organizat
 
 ## Related concepts
 
-- [Agents and Identity](agents-and-identity.md)
-- [Human Approval](human-approval.md)
+- [Agents and Identity](agents-and-identity)
+- [Human Approval](human-approval)

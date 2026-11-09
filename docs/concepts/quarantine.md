@@ -3,7 +3,7 @@ id: "quarantine"
 title: "Quarantine"
 sidebar_label: "Quarantine"
 sidebar_position: 13
-slug: "/concepts/quarantine"
+slug: "quarantine"
 description: "Understand why an agent may be blocked and what to do next."
 ---
 
@@ -37,6 +37,6 @@ Repeatedly submitting the same request will not resolve quarantine. Address the 
 
 ## Related concepts
 
-- [Agent Trust](agent-trust.md)
-- [Human Approval](human-approval.md)
-- [Audit History](audit-history.md)
+- [Agent Trust](agent-trust)
+- [Human Approval](human-approval)
+- [Audit History](audit-history)

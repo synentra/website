@@ -3,7 +3,7 @@ id: "execution-results-and-cancellation"
 title: "Execution Results and Cancellation"
 sidebar_label: "Execution Results and Cancellation"
 sidebar_position: 14
-slug: "/concepts/execution-results-and-cancellation"
+slug: "execution-results-and-cancellation"
 description: "Understand progress, cancellation, and uncertain outcomes."
 ---
 
@@ -44,5 +44,5 @@ Cancellation and reconciliation are distinct actions; neither should be describe
 
 ## Related concepts
 
-- [Invocations](invocations.md)
-- [Audit History](audit-history.md)
+- [Invocations](invocations)
+- [Audit History](audit-history)

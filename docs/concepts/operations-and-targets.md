@@ -3,7 +3,7 @@ id: "operations-and-targets"
 title: "Operations and Targets"
 sidebar_label: "Operations and Targets"
 sidebar_position: 3
-slug: "/concepts/operations-and-targets"
+slug: "operations-and-targets"
 description: "Understand the actions your agent can request and the systems they affect."
 ---
 
@@ -37,6 +37,6 @@ Review both the requested operation and its target before approving sensitive wo
 
 ## Related concepts
 
-- [Invocations](invocations.md)
-- [Policies and Restrictions](policies-and-restrictions.md)
-- [Human Approval](human-approval.md)
+- [Invocations](invocations)
+- [Policies and Restrictions](policies-and-restrictions)
+- [Human Approval](human-approval)

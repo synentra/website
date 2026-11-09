@@ -3,7 +3,7 @@ id: "policies-and-restrictions"
 title: "Policies and Restrictions"
 sidebar_label: "Policies and Restrictions"
 sidebar_position: 6
-slug: "/concepts/policies-and-restrictions"
+slug: "policies-and-restrictions"
 description: "Understand the rules that govern requested actions."
 ---
 
@@ -35,6 +35,6 @@ Use the recorded decision and its supporting explanation to determine whether th
 
 ## Related concepts
 
-- [Governance Decisions](governance-decisions.md)
-- [Task Grants](task-grants.md)
-- [Audit History](audit-history.md)
+- [Governance Decisions](governance-decisions)
+- [Task Grants](task-grants)
+- [Audit History](audit-history)

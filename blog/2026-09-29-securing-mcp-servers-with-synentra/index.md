@@ -253,8 +253,6 @@ MCP standardizes connectivity, not trust. The useful security boundary is not si
 
 Putting Synentra in front of an HTTP-based MCP server creates a place to make and record that decision. Keep the claims precise: the proxy governs the HTTP request path; the MCP server still owns protocol semantics, validation, and downstream authorization. With that division of responsibility, teams can add control without redesigning every agent or pretending a gateway understands context it cannot observe.
 
-**Primary CTA:** Follow the hands-on [MCP Integration Tutorial](/docs/tutorials/mcp-integration) to run a minimal MCP server through Synentra and test the governed request path.
-
 ---
 
 ## References

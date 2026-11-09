@@ -3,7 +3,7 @@ id: "intent"
 title: "Intent"
 sidebar_label: "Intent"
 sidebar_position: 5
-slug: "/concepts/intent"
+slug: "intent"
 description: "Understand how the purpose of an action contributes to governance."
 ---
 
@@ -35,6 +35,6 @@ If a request is sent for review because required intent evidence is missing, pro
 
 ## Related concepts
 
-- [Policies and Restrictions](policies-and-restrictions.md)
-- [Governance Decisions](governance-decisions.md)
-- [Human Approval](human-approval.md)
+- [Policies and Restrictions](policies-and-restrictions)
+- [Governance Decisions](governance-decisions)
+- [Human Approval](human-approval)

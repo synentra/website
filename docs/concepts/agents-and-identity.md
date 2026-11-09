@@ -3,7 +3,7 @@ id: "agents-and-identity"
 title: "Agents and Identity"
 sidebar_label: "Agents and Identity"
 sidebar_position: 2
-slug: "/concepts/agents-and-identity"
+slug: "agents-and-identity"
 description: "Understand who a request belongs to and where its authority applies."
 ---
 
@@ -35,6 +35,6 @@ When investigating a request, keep its agent identity and security scope togethe
 
 ## Related concepts
 
-- [Agent Trust](agent-trust.md)
-- [Task Grants](task-grants.md)
-- [Quarantine](quarantine.md)
+- [Agent Trust](agent-trust)
+- [Task Grants](task-grants)
+- [Quarantine](quarantine)

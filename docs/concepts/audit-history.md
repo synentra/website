@@ -3,7 +3,7 @@ id: "audit-history"
 title: "Audit History"
 sidebar_label: "Audit History"
 sidebar_position: 15
-slug: "/concepts/audit-history"
+slug: "audit-history"
 description: "Use recorded history to understand requests, decisions, and execution."
 ---
 
@@ -43,6 +43,6 @@ Do not assume every malformed request or early failure has a complete audit trai
 
 ## Related concepts
 
-- [Invocations](invocations.md)
-- [Governance Decisions](governance-decisions.md)
-- [Execution Results and Cancellation](execution-results-and-cancellation.md)
+- [Invocations](invocations)
+- [Governance Decisions](governance-decisions)
+- [Execution Results and Cancellation](execution-results-and-cancellation)

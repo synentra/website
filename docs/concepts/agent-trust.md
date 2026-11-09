@@ -3,7 +3,7 @@ id: "agent-trust"
 title: "Agent Trust"
 sidebar_label: "Agent Trust"
 sidebar_position: 8
-slug: "/concepts/agent-trust"
+slug: "agent-trust"
 description: "Understand how recorded behavior contributes to governance."
 ---
 
@@ -37,6 +37,6 @@ Quarantine has a separate operational effect: it blocks governed work while the 
 
 ## Related concepts
 
-- [Agents and Identity](agents-and-identity.md)
-- [Risk](risk.md)
-- [Quarantine](quarantine.md)
+- [Agents and Identity](agents-and-identity)
+- [Risk](risk)
+- [Quarantine](quarantine)

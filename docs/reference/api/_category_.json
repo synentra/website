@@ -4,6 +4,6 @@
   "link": {
     "type": "generated-index",
     "slug": "/reference/api",
-    "description": "The Synentra API Reference provides comprehensive documentation for developers looking to integrate with the Synentra platform. It includes detailed information on available endpoints, request and response formats, authentication methods, and usage examples to help you effectively utilize the API."
+    "description": "The Synentra API is a powerful tool that allows developers to interact with the Synentra platform programmatically. This API provides endpoints for managing resources, retrieving data, and performing various operations within the Synentra ecosystem. Whether you're building integrations, automating workflows, or developing custom applications, the Synentra API offers the flexibility and functionality you need to enhance your projects."
   }
 }

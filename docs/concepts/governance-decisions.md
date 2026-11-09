@@ -3,7 +3,7 @@ id: "governance-decisions"
 title: "Governance Decisions"
 sidebar_label: "Governance Decisions"
 sidebar_position: 9
-slug: "/concepts/governance-decisions"
+slug: "governance-decisions"
 description: "Understand Allow, Review, and Deny and your next step."
 ---
 
@@ -43,6 +43,6 @@ Follow the next step appropriate to the decision. Keep the request identifier an
 
 ## Related concepts
 
-- [Human Approval](human-approval.md)
-- [Execution Results and Cancellation](execution-results-and-cancellation.md)
-- [Audit History](audit-history.md)
+- [Human Approval](human-approval)
+- [Execution Results and Cancellation](execution-results-and-cancellation)
+- [Audit History](audit-history)

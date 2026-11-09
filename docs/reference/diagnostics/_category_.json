@@ -1,0 +1,10 @@
+{
+  "label": "Diagnostics",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "slug": "diagnostics",
+    "description": "Diagnostics are tools and techniques used to identify, analyze, and resolve issues or problems within a system, application, or process. They help in understanding the root cause of failures, performance bottlenecks, and other anomalies, enabling developers and engineers to improve the overall functionality and reliability of their systems."
+  },
+  "collapsed": true
+}

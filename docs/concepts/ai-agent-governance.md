@@ -3,7 +3,7 @@ id: "ai-agent-governance"
 title: "AI Agent Governance"
 sidebar_label: "AI Agent Governance"
 sidebar_position: 1
-slug: "/concepts/ai-agent-governance"
+slug: "ai-agent-governance"
 description: "Understand how Synentra governs the actions your agents request."
 ---
 
@@ -35,6 +35,6 @@ Keep permission and completion separate. “Allowed” means the request passed 
 
 ## Related concepts
 
-- [Operations and Targets](operations-and-targets.md)
-- [Governance Decisions](governance-decisions.md)
-- [Invocations](invocations.md)
+- [Operations and Targets](operations-and-targets)
+- [Governance Decisions](governance-decisions)
+- [Invocations](invocations)

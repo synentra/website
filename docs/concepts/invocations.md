@@ -3,7 +3,7 @@ id: "invocations"
 title: "Invocations"
 sidebar_label: "Invocations"
 sidebar_position: 4
-slug: "/concepts/invocations"
+slug: "invocations"
 description: "Follow one request from submission through its decision and result."
 ---
 
@@ -38,6 +38,6 @@ If the outcome is uncertain, investigate the existing invocation before starting
 
 ## Related concepts
 
-- [Governance Decisions](governance-decisions.md)
-- [Human Approval](human-approval.md)
-- [Execution Results and Cancellation](execution-results-and-cancellation.md)
+- [Governance Decisions](governance-decisions)
+- [Human Approval](human-approval)
+- [Execution Results and Cancellation](execution-results-and-cancellation)
