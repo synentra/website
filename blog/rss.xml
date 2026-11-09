@@ -17,7 +17,7 @@
             <content:encoded><![CDATA[<p><img decoding="async" loading="lazy" alt="Reverse Proxy Design for AI APIs" src="https://synentra.io/assets/images/deploying-synentra-on-kubernetes-3b6fa3a47e664850fbd4294f442ad991.png" width="1672" height="941" class="img_ev3q"></p>
 <p>Moving a governance gateway from <code>docker run</code> to Kubernetes is not primarily a YAML exercise. The difficult part is deciding what must remain available, consistent, private, and observable while the cluster reschedules pods and rolls out new versions.</p>
 <p>Synentra sits between autonomous AI agents and HTTP APIs. It validates agent identity, classifies likely intent, evaluates policy and risk, and then allows, blocks, or pauses a request for human approval. That position makes it part of the request path. A weak deployment can therefore undermine a strong decision model: a bypass route avoids governance, an unhealthy pod receives traffic, a local database is shared incorrectly, or an upgrade loses pending state.</p>
-<p>This guide develops a Kubernetes architecture for Synentra without assuming that Kubernetes solves those application-level decisions automatically. It covers workload placement, health checks, configuration, persistence, secrets, networking, scaling, upgrades, and observability. The companion <a class="" href="https://synentra.io/docs/tutorials/helm-chart-deployment">Helm Chart Deployment tutorial</a> builds a minimal chart from source and installs it on a local cluster.</p>
+<p>This guide develops a Kubernetes architecture for Synentra without assuming that Kubernetes solves those application-level decisions automatically. It covers workload placement, health checks, configuration, persistence, secrets, networking, scaling, upgrades, and observability.</p>
 <hr>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="start-with-the-request-path">Start with the request path<a href="https://synentra.io/blog/deploying-synentra-on-kubernetes#start-with-the-request-path" class="hash-link" aria-label="Direct link to Start with the request path" title="Direct link to Start with the request path" translate="no">​</a></h2>
 <p>The first design question is not “Deployment or StatefulSet?” It is “Can an agent reach the upstream API without passing through Synentra?”</p>
@@ -184,16 +184,12 @@
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="conclusion">Conclusion<a href="https://synentra.io/blog/deploying-synentra-on-kubernetes#conclusion" class="hash-link" aria-label="Direct link to Conclusion" title="Direct link to Conclusion" translate="no">​</a></h2>
 <p>Kubernetes provides a strong substrate for running Synentra, but the deployment architecture must preserve the governance boundary that gives the product value. Keep upstream APIs behind that boundary, treat health probes as control-plane decisions, match replica count to the state model, and make upgrades and observability part of the design.</p>
 <p>Begin with the smallest topology you can test honestly. Then externalize state, harden network paths, and scale based on measured behavior rather than a copied values file.</p>
-<p><strong>Primary CTA:</strong> Build and validate the baseline with the <a class="" href="https://synentra.io/docs/tutorials/helm-chart-deployment">Helm Chart Deployment tutorial</a>.</p>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="references">References<a href="https://synentra.io/blog/deploying-synentra-on-kubernetes#references" class="hash-link" aria-label="Direct link to References" title="Direct link to References" translate="no">​</a></h2>
 <ul>
 <li class=""><a class="" href="https://synentra.io/docs/getting-started">Getting Started with Synentra</a></li>
 <li class=""><a href="https://github.com/synentra/synentra" target="_blank" rel="noopener noreferrer" class="">Synentra repository</a></li>
 <li class=""><a href="https://kubernetes.io/docs/home/" target="_blank" rel="noopener noreferrer" class="">Kubernetes documentation</a></li>
 <li class=""><a href="https://helm.sh/docs/topics/charts/" target="_blank" rel="noopener noreferrer" class="">Helm chart documentation</a></li>
-<li class=""><a class="" href="https://synentra.io/docs/configuration/system">System Configuration</a></li>
-<li class=""><a class="" href="https://synentra.io/docs/configuration/security">Security Configuration</a></li>
-<li class=""><a class="" href="https://synentra.io/docs/configuration/observability">Observability</a></li>
 <li class=""><a class="" href="https://synentra.io/blog/reverse-proxy-design-for-ai-apis">Reverse Proxy Design for AI APIs</a></li>
 </ul>]]></content:encoded>
             <category>Kubernetes</category>
@@ -342,7 +338,6 @@
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="conclusion">Conclusion<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#conclusion" class="hash-link" aria-label="Direct link to Conclusion" title="Direct link to Conclusion" translate="no">​</a></h2>
 <p>MCP standardizes connectivity, not trust. The useful security boundary is not simply “can this client connect?” but “should this identified agent perform this action, with this apparent intent and risk, now?”</p>
 <p>Putting Synentra in front of an HTTP-based MCP server creates a place to make and record that decision. Keep the claims precise: the proxy governs the HTTP request path; the MCP server still owns protocol semantics, validation, and downstream authorization. With that division of responsibility, teams can add control without redesigning every agent or pretending a gateway understands context it cannot observe.</p>
-<p><strong>Primary CTA:</strong> Follow the hands-on <a class="" href="https://synentra.io/docs/tutorials/mcp-integration">MCP Integration Tutorial</a> to run a minimal MCP server through Synentra and test the governed request path.</p>
 <hr>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="references">References<a href="https://synentra.io/blog/securing-mcp-servers-with-synentra#references" class="hash-link" aria-label="Direct link to References" title="Direct link to References" translate="no">​</a></h2>
 <ul>
@@ -2216,7 +2211,6 @@ Context
 <p>Synentra is designed to be immediately testable. Run it locally with a single Docker command:</p>
 <div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">docker run --name synentra -p 7080:7080 ghcr.io/synentra/synentra:latest</span><br></div></code></pre></div></div>
 <p>For complete Docker initialization instructions, refer to the <a class="" href="https://synentra.io/docs/getting-started">Get started</a> documentation.</p>
-<p>For <strong>Production mode</strong>, you need to configure security settings correctly and define the <code>TokenIssuer</code> configuration to enable Synentra authentication and token issuance. Refer to the <a class="" href="https://synentra.io/docs/configuration/security#token-issuance">Security Configuration</a> documentation for more details.</p>
 <hr>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="join-the-community">Join the Community<a href="https://synentra.io/blog/introducing-synentra-intent-aware-governance-for-autonomous-ai-agents#join-the-community" class="hash-link" aria-label="Direct link to Join the Community" title="Direct link to Join the Community" translate="no">​</a></h2>
 <p>Governance for autonomous agents is a challenge we must solve together. Here’s how to get involved:</p>
