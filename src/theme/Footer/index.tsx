@@ -25,25 +25,15 @@ const groups = [
   ]},
 ];
 
-function Arrow(): ReactElement {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>;
-}
-
 /** Docusaurus theme override: one shared footer for home, docs and blog. */
 export default function Footer(): ReactElement {
   const logo = useBaseUrl('/img/logo.png');
   return <footer className={styles.footer}>
     <div className={`container ${styles.inner}`}>
-      <div className={styles.invitation}>
-        <div><p className={styles.eyebrow}>FROM INTENT TO AUTHORIZED ACTION</p><h2>Put governance into practice.</h2></div>
-        <Link className={styles.cta} to="/docs/quickstart/local-development">Start building <Arrow /></Link>
-      </div>
       <div className={styles.directory}>
         <div className={styles.brand}>
-          <Link to="/" className={styles.logoLink} aria-label="Synentra home"><img src={logo} alt="Synentra" width="160" height="54" loading="lazy" /></Link>
+          <Link to="/" className={styles.logoLink} aria-label="Synentra home"><img src={logo} alt="Synentra" width="132" height="44" loading="lazy" /></Link>
           <p>Intent-Aware Runtime Governance<br />for AI Agents.</p>
-          <span className={styles.brandNote}>Your infrastructure. Your policies.<br />Your authority.</span>
-          <a className={styles.repository} href={repository}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-14-2 18" /></svg> Built in the open <Arrow /></a>
         </div>
         <nav className={styles.navigation} aria-label="Footer navigation">
           {groups.map(group => <div className={styles.linkGroup} key={group.title}><h3>{group.title}</h3><ul>{group.links.map(([label, href]) => <li key={label}>{href.startsWith('/') ? <Link to={href}>{label}</Link> : <a href={href}>{label}</a>}</li>)}</ul></div>)}
