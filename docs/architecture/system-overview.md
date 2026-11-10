@@ -8,28 +8,7 @@ description: "System Overview — Synentra v2 documentation."
 
 Synentra separates **request evaluation**, **durable admission**, and **governed execution**. External clients and targets sit outside the runtime boundary.
 
-```mermaid
-flowchart LR
-  A[Agents and clients] --> I
-  subgraph S[Synentra runtime]
-    I[REST or MCP ingress] --> ID[Identity and scope]
-    ID --> G[Governance evaluation]
-    G -->|Allow| AD[Durable admission]
-    G -->|Review| H[Human approval]
-    H -->|Approved and resumed| AD
-    G -->|Deny| STOP[Stop]
-    H -->|Rejected| STOP
-    AD --> W[Execution worker]
-    W --> T[HTTP or MCP adapter]
-    C[Credential resolution] -.-> T
-    T --> N[Outbound security]
-  end
-  N --> R[Registered targets]
-  DB[(Governance and execution stores)] -.-> G
-  AD -.-> DB
-  W -.-> DB
-  S -.-> O[Audit and operational telemetry]
-```
+![Synentra Architecture](../img/architecture.jpg)
 
 Solid arrows represent request/execution flow. Dotted arrows represent dependencies or persisted evidence. The diagram describes responsibility boundaries, not deployment replicas or independent microservices.
 
