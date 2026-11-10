@@ -1,395 +1,178 @@
+import {useState, type ReactElement} from 'react';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
-
-import HomepageFeatures from '@site/src/components/Homepage/features';
 import GitHubContributors from '@site/src/components/GitHubContributors';
-import FadingLine from '@site/src/components/FadingLine';
-
 import styles from './index.module.css';
 
-function CheckIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path
-        d="M16.7 5.8 8.5 14 3.7 9.2"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-      />
-    </svg>
-  );
-}
+const github = 'https://github.com/synentra/synentra';
+const dockerCommand = 'docker run -p 7080:7080 ghcr.io/synentra/synentra:latest';
 
-function ArrowIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path
-        d="M4 10h12M11 5l5 5-5 5"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
-function GitHubIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M12 .7A11.5 11.5 0 0 0 8.36 23c.58.1.79-.25.79-.56v-2.02c-3.22.7-3.9-1.36-3.9-1.36-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.28-5.27-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.7 5.38-5.28 5.67.42.36.79 1.07.79 2.16v3.21c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"
-      />
-    </svg>
-  );
-}
-
-function ShieldIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M12 3 5 6v5c0 4.6 2.9 8.8 7 10 4.1-1.2 7-5.4 7-10V6l-7-3Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
-      <path
-        d="m9 12 2 2 4-4"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
-function GaugeIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M8 30a16 16 0 1 1 32 0" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      <path d="M24 24l8-8" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="24" cy="24" r="2.5" fill="currentColor" />
-      <path d="M10 36h28" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function StackIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <rect x="10" y="8" width="28" height="8" rx="3" fill="none" stroke="currentColor" strokeWidth="3" />
-      <rect x="10" y="20" width="28" height="8" rx="3" fill="none" stroke="currentColor" strokeWidth="3" />
-      <rect x="10" y="32" width="28" height="8" rx="3" fill="none" stroke="currentColor" strokeWidth="3" />
-      <circle cx="17" cy="12" r="1.8" fill="currentColor" />
-      <circle cx="17" cy="24" r="1.8" fill="currentColor" />
-      <circle cx="17" cy="36" r="1.8" fill="currentColor" />
-    </svg>
-  );
-}
-
-function CodeShieldIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M24 6 12 10v10c0 8 5.1 15.4 12 18 6.9-2.6 12-10 12-18V10L24 6Z" fill="none" stroke="currentColor" strokeWidth="3" />
-      <path d="m21 19-4 5 4 5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="m27 19 4 5-4 5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function HitlIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <circle cx="17" cy="18" r="5" fill="none" stroke="currentColor" strokeWidth="3" />
-      <circle cx="31" cy="18" r="5" fill="none" stroke="currentColor" strokeWidth="3" />
-      <path d="M8 37c1.8-5.5 6.3-8 9-8s7.2 2.5 9 8" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      <path d="M22 37c1.8-5.5 6.3-8 9-8s7.2 2.5 9 8" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-interface DecisionStepProps {
-  number: string;
-  title: string;
-  value: string;
-  warning?: boolean;
-}
-
-function DecisionStep({
-  number,
-  title,
-  value,
-  warning = false,
-}: DecisionStepProps): JSX.Element {
-  return (
-    <div className={styles.pipelineStep}>
-      <span className={styles.stepNumber}>{number}</span>
-      <div className={styles.stepContent}>
-        <span>{title}</span>
-        <strong>{value}</strong>
-      </div>
-      {warning ? (
-        <span className={styles.warningStatus}>Review</span>
-      ) : (
-        <span className={styles.completeStatus}>
-          <CheckIcon />
-        </span>
-      )}
-    </div>
-  );
-}
-
-function HomepageHeader(): JSX.Element {
-  const dockerCommand =
-    'docker run -p 7080:7080 ghcr.io/synentra/synentra:latest';
-
-  const copyCommand = async (): Promise<void> => {
+function DockerCommand(): ReactElement {
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  async function copyCommand(): Promise<void> {
     try {
       await navigator.clipboard.writeText(dockerCommand);
+      setCopyStatus('copied');
     } catch {
-      // Clipboard access can be unavailable in restricted contexts.
+      setCopyStatus('error');
     }
+  }
+  return <div className={styles.dockerBox}>
+    <div className={styles.dockerHeader}><span>RUN WITH DOCKER</span><button type="button" className={styles.copyButton} onClick={copyCommand} aria-label="Copy Docker command"><svg viewBox="0 0 24 24" aria-hidden="true"><path d={copyStatus === 'copied' ? 'm5 12 4 4L19 6' : 'M9 5V3h12v14h-2 M3 7h12v14H3V7Z'} /></svg>{copyStatus === 'copied' ? 'Copied' : 'Copy'}</button></div>
+    <pre className={styles.dockerCode}><code>{dockerCommand}</code></pre>
+    <p className={styles.copyStatus} role="status">{copyStatus === 'copied' ? 'Command copied to clipboard.' : copyStatus === 'error' ? 'Clipboard access is unavailable. Select the command and copy it manually.' : ''}</p>
+  </div>;
+}
+
+function SecurityIcon({kind = 'shield'}: {kind?: string}): ReactElement {
+  const paths: Record<string, string> = {
+    shield: 'M12 3 4.5 6v5c0 5 3.2 8.4 7.5 10 4.3-1.6 7.5-5 7.5-10V6L12 3Z M8.5 12l2.5 2.5 4.5-5',
+    policy: 'M7 3h10l3 3v15H4V3h3 M8 9h8 M8 13h8 M8 17h5',
+    people: 'M15 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2 M15 4a4 4 0 0 1 0 8 M21 21v-2a4 4 0 0 0-3-3.9 M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8',
+    key: 'M15 3a6 6 0 0 0-5.5 8.4L3 18v3h3v-3h3v-3l3-3 M15 3a6 6 0 1 1-3 11 M16 7h.01',
+    scope: 'M8 3H3v5 M16 3h5v5 M21 16v5h-5 M8 21H3v-5 M8 12h8 M12 8v8',
+    record: 'M5 3h14v18H5V3 M8 8h8 M8 12h8 M8 16h4',
   };
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths[kind] ?? paths.shield} /></svg>;
+}
 
+const scenarios = {
+  allow: {label: 'Allow', operation: 'inventory.read', rule: 'Read access permitted', next: 'Proceed to admission', note: 'The request may proceed. Authority is checked again before dispatch.'},
+  review: {label: 'Review', operation: 'inventory.adjust', rule: 'Human approval required', next: 'Wait for approval', note: 'Execution is paused. A reviewer decides, then the caller resumes approved work.'},
+  deny: {label: 'Deny', operation: 'inventory.delete', rule: 'Operation restricted', next: 'Stop before execution', note: 'The request stops. No target action is dispatched.'},
+};
+
+function Arrow(): ReactElement {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" /></svg>;
+}
+
+const capabilities = [
+  ['Policies with context', 'Evaluate identity, scope, trust, risk, and configured intent evidence against versioned policies and explicit restrictions.'],
+  ['Explicit operation boundaries', 'Register the actions agents can request and the systems they can reach. Bind each operation to its permitted target.'],
+  ['Keep people in control', 'Pause requests that need review. Bind approval to the original request, then recheck authority when the caller resumes.'],
+  ['Bound task authority', 'Use scoped, time-limited task grants and applicable budgets to constrain the operations an agent can perform.'],
+  ['Control target access', 'Resolve credentials through target bindings. Enforce destination, network, and HTTPS requirements before external calls.'],
+  ['Follow the outcome', 'Inspect decisions and execution records. Use configured outcome verification to investigate uncertain results.'],
+];
+
+const stages = [
+  ['Evaluate the request', 'Resolve the caller and operation. Apply governance to decide whether work can proceed.', 'Identity · Scope · Intent evidence · Trust · Risk · Policy'],
+  ['Admit authorized work', 'Check current authority and persist the authorized operation and target for execution.', 'Approvals · Task grants · Limits · Execution snapshot'],
+  ['Execute with controls', 'Revalidate queued work, resolve credentials, and dispatch through the selected adapter.', 'HTTP / MCP · Outbound security · Execution records'],
+];
+
+function RequestExample(): ReactElement {
+  const [decision, setDecision] = useState<keyof typeof scenarios>('review');
+  const scenario = scenarios[decision];
   return (
-    <header className={styles.hero}>
-      <div className={styles.softGlow} aria-hidden="true" />
-      <div className={styles.waveLeft} aria-hidden="true" />
-      <div className={styles.waveRight} aria-hidden="true" />
-
-      <div className={`${styles.heroContainer} container`}>
-        <section className={styles.content}>
-          <div className={styles.eyebrow}>
-            <span className={styles.eyebrowDot} />
-            Open-source governance for autonomous AI agents
+    <figure className={styles.example} aria-labelledby="request-example-title">
+      <div className={styles.exampleHeader}><span className={styles.panelLabel}>SYNENTRA / RUNTIME</span><span className={styles.exampleLabel}>Interactive example</span></div>
+      <div className={styles.exampleBody}>
+        <div className={styles.inputRow}><span className={styles.agentGlyph} aria-hidden="true">⌘</span><div><span className={styles.smallLabel}>AGENT REQUEST</span><code>{scenario.operation}</code></div><span className={styles.protocol}>HTTP / MCP</span></div>
+        <div className={styles.connector} aria-hidden="true"><span /></div>
+        <div className={styles.controlBoundary}>
+          <div className={styles.controlHeading}><div className={styles.shield}><SecurityIcon /></div><div><p className={styles.smallLabel}>CONTROL BOUNDARY</p><Heading as="h2" id="request-example-title">Runtime governance</Heading></div></div>
+          <div className={styles.controlTags}><span>Identity & scope</span><span>Policy & risk</span><span>Task authority</span></div>
+          <div className={styles.decisionSelector} role="group" aria-label="Explore an illustrative governance decision">
+            {(Object.keys(scenarios) as Array<keyof typeof scenarios>).map(value => <button key={value} type="button" aria-pressed={decision === value} className={`${styles.decisionButton} ${decision === value ? styles.selectedDecision : ''}`} onClick={() => setDecision(value)}>{scenarios[value].label}</button>)}
           </div>
-
-          <h1 className={styles.title}>
-            <span className={styles.titleBlack}>Intent-Aware Runtime</span>
-            <span className={styles.titleRed}>Governance for AI Agents</span>
-          </h1>
-
-          <p className={styles.description}>
-            Synentra understands agent intent, calculates contextual risk,
-            applies deterministic policies, and routes sensitive actions for
-            human approval.
-          </p>
-
-          <div className={styles.actions}>
-            <Link className={styles.primaryButton} to="/docs/getting-started">
-              Get started
-              <ArrowIcon />
-            </Link>
-
-            <Link
-              className={styles.secondaryButton}
-              href="https://github.com/synentra/synentra"
-            >
-              <GitHubIcon />
-              View on GitHub
-            </Link>
-
-            <p className={styles.description}>Interested in trying Synentra with a real AI agent?
-              <br />
-              <Link to="/design-partners">Become a Design Partner →</Link>
-            </p>
-          </div>
-
-          <div className={styles.proof}>
-            <span><CheckIcon /> Runs locally</span>
-            <span><CheckIcon /> No agent code changes</span>
-            <span><CheckIcon /> Apache 2.0</span>
-          </div>
-
-          <div className={styles.install}>
-            <div className={styles.installHeader}>Quick install with Docker</div>
-            <div className={styles.command}>
-              <span className={styles.prompt}>$</span>
-              <code>{dockerCommand}</code>
-              <button type="button" onClick={copyCommand} aria-label="Copy Docker command">
-                Copy
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.visual} aria-label="Synentra Gateway decision preview">
-          <div className={styles.gatewayCard}>
-            <div className={styles.cardHeader}>
-              <div className={styles.windowControls} aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </div>
-              <span className={styles.cardTitle}>Synentra Runtime Governance</span>
-              <span className={styles.liveStatus}><span /> Live</span>
-            </div>
-
-            <div className={styles.requestHeader}>
-              <div>
-                <span className={styles.requestLabel}>Incoming action</span>
-                <strong>Delete customer account</strong>
-              </div>
-              <span className={styles.method}>DELETE</span>
-            </div>
-
-            <div className={styles.pipeline}>
-              <DecisionStep number="01" title="Intent classified" value="destructive_delete" />
-              <DecisionStep number="02" title="Risk evaluated" value="92 / 100 · Critical" warning />
-              <DecisionStep number="03" title="Policy evaluated" value="production-destructive-actions" />
-            </div>
-
-            <div className={styles.decision}>
-              <div className={styles.decisionIcon}><ShieldIcon /></div>
-              <div>
-                <span>Final decision</span>
-                <strong>Human approval required</strong>
-              </div>
-              <span className={styles.hitlBadge}>HITL</span>
-            </div>
-
-            <div className={styles.cardFooter}>
-              <div>
-                <span>Latency</span>
-                <strong>28.4 ms</strong>
-              </div>
-              <div>
-                <span>Agent trust</span>
-                <strong>0.78</strong>
-              </div>
-              <div>
-                <span>Request ID</span>
-                <strong>req_8f2a</strong>
-              </div>
-            </div>
-          </div>
-
-          <div className={`${styles.floatingCard} ${styles.intentCard}`}>
-            <span>Intent confidence</span>
-            <strong>96.8%</strong>
-          </div>
-
-          <div className={`${styles.floatingCard} ${styles.auditCard}`}>
-            <span className={styles.auditIcon}><ShieldIcon /></span>
-            <div>
-              <strong>Audit event</strong>
-              <span>recorded</span>
-            </div>
-          </div>
-        </section>
+        </div>
+        <div className={styles.connector} aria-hidden="true"><span /></div>
+        <div className={styles.outcome} data-outcome={decision} aria-live="polite" aria-atomic="true"><div className={styles.outcomeHeading}><span className={styles.statusDot} aria-hidden="true" /><strong>{scenario.rule}</strong></div><p>{scenario.note}</p><span className={styles.nextStep}>{scenario.next} <Arrow /></span></div>
+        <div className={styles.targetRow}><SecurityIcon kind="key" /><span>Credentials and outbound checks apply before target access.</span></div>
       </div>
-
-      <div className={`${styles.metrics} container`}>
-        <div className={styles.metricItem}>
-          <div className={styles.metricIcon}><GaugeIcon /></div>
-          <div className={styles.metricContent}>
-            <strong>&lt;35 ms</strong>
-            <span>Target P85 latency</span>
-          </div>
-        </div>
-
-        <div className={styles.metricItem}>
-          <div className={styles.metricIcon}><StackIcon /></div>
-          <div className={styles.metricContent}>
-            <strong>Local-first</strong>
-            <span>Private intent classification</span>
-          </div>
-        </div>
-
-        <div className={styles.metricItem}>
-          <div className={styles.metricIcon}><CodeShieldIcon /></div>
-          <div className={styles.metricContent}>
-            <strong>Policy as Code</strong>
-            <span>Versioned governance rules</span>
-          </div>
-        </div>
-
-        <div className={styles.metricItem}>
-          <div className={styles.metricIcon}><HitlIcon /></div>
-          <div className={styles.metricContent}>
-            <strong>HITL</strong>
-            <span>Human oversight for high risk</span>
-          </div>
-        </div>
-      </div>
-    </header>
+      <figcaption className={styles.exampleCaption}>Illustrative policies · This preview does not execute requests.</figcaption>
+    </figure>
   );
 }
 
-function HomepageAboutSynentra(): JSX.Element {
-  return (
-    <section className="about-section">
-      <div className="container">
-        <div className="about-wrapper">
-          <div className="about-kicker">Intent-aware governance</div>
-          <h2 className="about-title">What is Synentra?</h2>
-          <p>
-            In today’s enterprise landscape, autonomous AI agents are rapidly
-            transforming how work gets done — from automating customer support
-            and data analysis to orchestrating complex multi-step operations.
-            Yet, existing API gateways and security tools were not designed for
-            the unique challenges of agentic AI: understanding intent, managing
-            dynamic trust, and enforcing granular policies at near-real-time
-            speeds. <b>Synentra breaks these barriers</b>. Built on .NET, this
-            lightweight, intent-aware governance gateway intercepts every
-            outbound call from AI agents, validates their identity, checks
-            dynamic policies, and escalates high-risk actions for human approval.
-          </p>
-          <p>
-            Synentra delivers a production-ready governance layer without
-            compromising security, compliance, or operational control. It
-            combines deterministic policy enforcement, adaptive risk scoring,
-            semantic intent classification, short-lived JWT identity, policy as
-            code, and tamper-evident audit records in a modular architecture.
-          </p>
+function Hero(): ReactElement {
+  return <header className={styles.hero}>
+    <div className={`container ${styles.heroGrid}`}>
+      <div className={styles.heroCopy}>
+        <p className={styles.eyebrow}><span aria-hidden="true" /> AI AGENT SECURITY · OPEN SOURCE</p>
+        <Heading as="h1" className={styles.title}>Intent-Aware Runtime <span>Governance for AI Agents</span></Heading>
+        <p className={styles.lead}>Let agents act. Keep authority in your hands.</p>
+        <p className={styles.description}>Put security and control between agent decisions and real-world actions. Govern access to HTTP APIs and MCP tools with explicit policies, human approval, and durable execution.</p>
+        <div className={styles.actions}>
+          <Link className={styles.primaryButton} to="/docs/quickstart/local-development">Get started <Arrow /></Link>
+          <Link className={styles.secondaryButton} href={github}>View on GitHub <Arrow /></Link>
+        </div>
+        <ul className={styles.compatibility} aria-label="Project foundations"><li>HTTP + MCP</li><li>Self-hosted</li><li>Apache 2.0</li></ul>
+        <DockerCommand />
+      </div>
+      <div className={styles.runtimeScene}>
+        <div className={styles.sceneCaption}><span>FROM INTENT TO ACTION</span><span>A governed path to your systems</span></div>
+        <svg className={styles.sceneWires} viewBox="0 0 1200 620" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="600" cy="310" rx="530" ry="270" /><ellipse cx="600" cy="310" rx="480" ry="235" /></svg>
+        <div className={styles.sceneRail} data-side="agents">
+          <span className={styles.railLabel}>01 / YOUR AGENTS</span>
+          <div className={styles.endpoint}><span className={styles.endpointIcon}><SecurityIcon kind="scope" /></span><strong>AI agents</strong><span>Intent + requested action</span></div>
+          <div className={styles.endpoint}><span className={styles.endpointIcon}><SecurityIcon kind="policy" /></span><strong>Applications</strong><span>REST and MCP clients</span></div>
+          <p>Every request enters through an explicit control boundary.</p>
+        </div>
+        <RequestExample />
+        <div className={styles.sceneRail} data-side="targets">
+          <span className={styles.railLabel}>03 / YOUR SYSTEMS</span>
+          <div className={styles.endpoint}><span className={styles.endpointIcon}><SecurityIcon kind="key" /></span><strong>HTTP APIs</strong><span>Registered operations</span></div>
+          <div className={styles.endpoint}><span className={styles.endpointIcon}><SecurityIcon kind="record" /></span><strong>MCP tools</strong><span>Registered servers</span></div>
+          <p>Target access follows authorization and outbound checks.</p>
         </div>
       </div>
-    </section>
-  );
+    </div>
+    <div className={`container ${styles.foundationStrip}`}>
+      <div><SecurityIcon kind="scope" /><div><strong>Explicit authority</strong><span>Registered operations. Scoped access.</span></div></div>
+      <div><SecurityIcon kind="people" /><div><strong>Human oversight</strong><span>Review when your policies require it.</span></div></div>
+      <div><SecurityIcon kind="shield" /><div><strong>Controlled execution</strong><span>Revalidate authority before dispatch.</span></div></div>
+    </div>
+  </header>;
 }
 
-function HomepageContributors(): JSX.Element {
-  return (
-    <section className="contributorsSection">
-      <div className="container">
-        <div className="section-kicker">Open-source community</div>
-        <Heading as="h2" className="contributorsTitle">
-          Meet Our Contributors
-        </Heading>
-        <p className="contributorsDescription">
-          Synentra thrives thanks to contributors whose expertise, creativity,
-          and commitment shape every release.
-        </p>
-        <div className="contributorsGridWrapper">
-          <GitHubContributors owner="synentra" repo="synentra" />
-        </div>
-      </div>
-    </section>
-  );
+const capabilityDetails = [
+  ['Versioned policies', 'Context-aware decisions'],
+  ['Registered operations', 'Explicit target bindings'],
+  ['Request-bound approvals', 'Authority checks on resume'],
+  ['Scoped, time-limited grants', 'Applicable execution budgets'],
+  ['Credential binding resolution', 'Destination and HTTPS checks'],
+  ['Decision and execution records', 'Configured outcome verification'],
+];
+
+function Workflow(): ReactElement {
+  return <section className={styles.section} aria-labelledby="workflow-title"><div className="container">
+    <div className={styles.sectionHeading}>
+      <div><p className={styles.kicker}>The runtime boundary</p><Heading as="h2" id="workflow-title">Control before the call.<br />Evidence after execution.</Heading></div>
+      <p>Permission, execution, and a verified outcome are different things. Synentra keeps them distinct so you can understand what happened.</p>
+    </div>
+    <ol className={styles.workflow}>{stages.map(([title, text, detail], i) => <li key={title}><span className={styles.stageNumber}>0{i + 1}</span><Heading as="h3">{title}</Heading><p>{text}</p><div className={styles.stageDetail}>{detail}</div></li>)}</ol>
+    <div className={styles.decisionLegend}><span><b className={styles.allow}>Allow</b> Proceed to admission</span><span><b className={styles.review}>Review</b> Pause for a decision</span><span><b className={styles.deny}>Deny</b> Stop the request</span></div>
+    <Link className={styles.textLink} to="/docs/architecture/system-overview">Explore the architecture <Arrow /></Link>
+  </div></section>;
 }
 
-export default function Home(): JSX.Element {
-  return (
-    <Layout
-      title="Intent-Aware Governance Gateway for Autonomous AI Agents"
-      description="The essential security layer for autonomous AI. Evaluate agent intent, enforce guardrails, and route high-risk operations to human approval workflows."
-    >
-      <HomepageHeader />
-      <main>
-        <FadingLine />
-        <HomepageAboutSynentra />
-        <FadingLine />
-        <HomepageFeatures />
-        <FadingLine />
-        <HomepageContributors />
-      </main>
-    </Layout>
-  );
+function Capabilities(): ReactElement {
+  return <section className={`${styles.section} ${styles.tinted}`} aria-labelledby="capabilities-title"><div className="container">
+    <div className={styles.sectionHeading}><div><p className={styles.kicker}>Security and governance</p><Heading as="h2" id="capabilities-title">Agent access.<br />On your terms.</Heading></div><p>Define what an agent may do, where it may act, and when a person needs to decide.</p></div>
+    <div className={styles.capabilityGrid}>{capabilities.map(([title, text], i) => <article key={title} className={styles.capability}><div className={styles.capabilityTop}><SecurityIcon kind={['policy','scope','people','shield','key','record'][i]} /><span>0{i + 1}</span></div><Heading as="h3">{title}</Heading><p>{text}</p><ul className={styles.capabilityDetails}>{capabilityDetails[i].map(detail => <li key={detail}><span aria-hidden="true">↳</span>{detail}</li>)}</ul></article>)}</div>
+    <p className={styles.providerNote}>Intent assessment depends on a configured provider. The current baseline requires an additional working implementation for semantic classification.</p>
+  </div></section>;
+}
+
+function GetStarted(): ReactElement {
+  return <section className={styles.section} aria-labelledby="start-title"><div className={`container ${styles.startPanel}`}>
+    <div><p className={styles.kicker}>Built for your stack</p><Heading as="h2" id="start-title">Your agents. Your systems.<br />Your governance.</Heading><p>Self-host Synentra, connect your identity provider, and register the operations your agents need. Start with one HTTP target and expand from there.</p><div className={styles.actions}><Link className={styles.primaryButton} to="/docs/quickstart/local-development">Follow the QuickStart <Arrow /></Link><Link className={styles.textLink} to="/docs/getting-started">Read the introduction <Arrow /></Link></div></div>
+    <div className={styles.setup}><p className={styles.setupLabel}>Your starting checklist</p><ul><li><span>01</span> .NET 10 and SQLite or PostgreSQL</li><li><span>02</span> An identity provider and issued tokens</li><li><span>03</span> A registered operation and target</li></ul><p>Self-host the runtime and connect the systems your agents need.</p></div>
+  </div></section>;
+}
+
+function Community(): ReactElement {
+  return <section className={`${styles.section} ${styles.community}`} aria-labelledby="community-title"><div className="container">
+    <p className={styles.kicker}>Built in the open</p><Heading as="h2" id="community-title">Help shape governed agent execution.</Heading>
+    <p className={styles.communityIntro}>Contribute code, improve the docs, or share what you need from Synentra in a real agent workflow.</p>
+    <div className={styles.communityActions}><Link className={styles.textLink} href={`${github}/discussions`}>Join the discussion <Arrow /></Link><Link className={styles.textLink} to="/design-partners">Become a design partner <Arrow /></Link></div>
+    <div className={styles.contributors}><Heading as="h3">Project contributors</Heading><GitHubContributors owner="synentra" repo="synentra" /></div>
+  </div></section>;
+}
+
+export default function Home(): ReactElement {
+  return <Layout title="Intent-Aware Runtime Governance for AI Agents" description="Govern AI-agent requests to registered HTTP APIs and MCP tools with policies, human approval, scoped authority, and durable execution."><main className={styles.home}><Hero /><Workflow /><Capabilities /><GetStarted /><Community /></main></Layout>;
 }
